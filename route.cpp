@@ -90,9 +90,9 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     ReadGraphData(graphStream, graph, edgeInfoDict);                 // read a.csv
     ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
 
-    std::set<int> without;
-    without.insert(1);
-    without.insert(2);
+//    std::set<int> without;
+//    without.insert(1);
+//    without.insert(2);
 
 
 
