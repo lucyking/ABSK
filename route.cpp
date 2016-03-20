@@ -96,6 +96,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 
 
 
+
     SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
 
     std::pair<std::pair<int, int>, int> key;
