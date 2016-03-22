@@ -10,8 +10,8 @@
 typedef std::pair<int, int>             Edge;           // <start,dest>
 typedef std::pair<int, int>             EdgeInfo;       // <index,weight>
 typedef std::map<int, std::set<int> >   Graph;          
-typedef std::map<Edge, EdgeInfo>        EdgeInfoDict;   // 有向边附加信息字典的定义
-typedef std::set<int>                   Conditions;     // 必须经过的结点集合
+typedef std::map<Edge, EdgeInfo>        EdgeInfoDict;   // 
+typedef std::set<int>                   Conditions;     // should via nodes' set
 typedef std::pair<
             int,
             std::pair<
