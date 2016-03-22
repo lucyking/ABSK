@@ -240,7 +240,9 @@ void Dijkstra(const Graph & graph, const EdgeInfoDict & edgeInfoDict,int source,
     std::set<int> processed;        // 已处理过的结点
     std::set<Candidate> candidates; // 待处理的结点， 配合上Candidate的定义， 这便是一个小顶堆
 
-    // 算法初始化， 起点加入processed集合， 起点的邻接点加入candidates集合
+    // 算法初始化， 
+    //1.起点加入processed集合;
+    //2.起点的邻接点加入candidates集合
     processed.insert(source);
     Graph::const_iterator pSourceAdjs = graph.find(source);         // 指向graph[source]的迭代器
     if(pSourceAdjs != graph.end()) {                                // 这是一个肯定会满足的条件， 除非source结点不在图中
