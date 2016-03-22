@@ -6,10 +6,10 @@
 #include <set>
 #include <vector>
 
-//--------------------------------------------------------------------------------------------------------类型定义
-typedef std::pair<int, int>             Edge;           // 有向边的定义, first代表边的起点， second代表边的终点
-typedef std::pair<int, int>             EdgeInfo;       // 有向边的附加信息的定义, first代表边的编号， second代表边的权重
-typedef std::map<int, std::set<int> >   Graph;          // 图的定义
+//typedef
+typedef std::pair<int, int>             Edge;           // <start,dest>
+typedef std::pair<int, int>             EdgeInfo;       // <index,weight>
+typedef std::map<int, std::set<int> >   Graph;          
 typedef std::map<Edge, EdgeInfo>        EdgeInfoDict;   // 有向边附加信息字典的定义
 typedef std::set<int>                   Conditions;     // 必须经过的结点集合
 typedef std::pair<
