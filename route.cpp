@@ -32,7 +32,7 @@ typedef std::map<
             Path                        // 路径
         >                               SK66_F_dict;;       // SK66算法中f?(v_i, v_j)的定义
 
-typedef struct Candidate {                      // Dijstra算法中的候选人
+typedef struct Candidate {                      // Dijkstra算法中的候选人
     int nodeNo;
     int pathCost;
     std::vector<int> nodePath;
@@ -109,11 +109,11 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     std::vector<int> & edgePath = ansPath.second.second;
 
     printf("路径花费 == %d\n", ansCost);
-    printf("共经过了「%d」个结点： ",pointPath.size());
+    printf("共经过了「%ld」个结点： ",pointPath.size());
     for(std::vector<int>::const_iterator iter = pointPath.begin(); iter != pointPath.end(); ++iter)
         printf("%d|", (*iter));
     printf("\n");
-    printf("共经过了「%d」条边: ", edgePath.size());
+    printf("共经过了「%ld」条边: ", edgePath.size());
     for(std::vector<int>::const_iterator iter = edgePath.begin(); iter != edgePath.end(); ++iter)
         printf("%d|", (*iter));
     printf("\n");
@@ -207,7 +207,7 @@ void PrintConditions(int source, int dest, const Conditions & conditions) {
     printf("\n");
 }
 void PrintShortestPathDict(const ShortestPathDict & pathDict) {
-    printf("-------共有%d条最短路径信息-------\n", pathDict.size());
+    printf("-------共有%ld条最短路径信息-------\n", pathDict.size());
     for(ShortestPathDict::const_iterator iter = pathDict.begin(); iter != pathDict.end(); ++iter) {
         int from = (iter->first).first;
         int to = (iter->first).second;
@@ -231,7 +231,7 @@ void PrintShortestPathDict(const ShortestPathDict & pathDict) {
             printf("%d->", *veciter);
         printf("%d\n", to);
     }
-    printf("-------共有%d条最短路径信息-------\n", pathDict.size());
+    printf("-------共有%ld条最短路径信息-------\n", pathDict.size());
 }
 //--------------------------------------------------------------------------------------------------------算法函数实现
 void Dijkstra(const Graph & graph, const EdgeInfoDict & edgeInfoDict,int source, ShortestPathDict & pathDict,const std::set<int> & withoutPoint) {
@@ -330,34 +330,34 @@ void SK66(
         if(!pathDict.count(pathToBeSolve))
             Dijkstra(graph, edgeInfoDict, node, pathDict);
         if(!pathDict.count(pathToBeSolve)) {
-            std::pair<std::pair<int, int>, int> key;
+            std::pair<std::pair<int, int>, int> key;   // < <起始点，终止点>,迭代次数>
             key.first = pathToBeSolve;
             key.second = 0;
             Path path;
             path.first = 0xffffff;          // 六个f， 足够表示无穷大了, 防止在后续加法中溢出
-            fdict[key] = path;
+            fdict[key] = path;        // this path is not exist
         } else {
             std::pair<std::pair<int, int>, int> key;
             key.first = pathToBeSolve;
             key.second = 0;
-            ShortestPathDict::const_iterator PPath = pathDict.find(pathToBeSolve);
+            ShortestPathDict::const_iterator PPath = pathDict.find(pathToBeSolve);  // Dj search get the solved result
             Path path = PPath->second;
             fdict[key] = path;
         }
     } else {
         // 当迭代次数大于0的时候
-        std::pair<std::pair<int, int>, int> key;
-        key.first = std::pair<int, int>(node, dest);
-        key.second = iterCount;
+        std::pair<std::pair<int, int>, int> key; // < <起始点，终止点>,迭代次数>
+        key.first = std::pair<int, int>(node, dest); // first
+        key.second = iterCount;   // second
 
         Path minCostPath;
         minCostPath.first = 0x7fffffff;
 
         for(Conditions::const_iterator iter = conditions.begin(); iter != conditions.end(); ++iter) {
             if(*iter == node)
-                continue;
+                continue;        // not via this node itself
 
-            // 计算D(v_i, v_l)
+            // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
             std::pair<int, int> leftHalfPathToBeSolve(node, *iter);
             if(!pathDict.count(leftHalfPathToBeSolve)) {
                 Dijkstra(graph, edgeInfoDict, node, pathDict);
@@ -381,7 +381,7 @@ void SK66(
             std::pair<std::pair<int, int>, int> rightHalfPathToBeSolve;
             rightHalfPathToBeSolve.first.first = *iter;
             rightHalfPathToBeSolve.first.second = dest;
-            rightHalfPathToBeSolve.second = iterCount-1;
+            rightHalfPathToBeSolve.second = iterCount-1; //迭代次数
             if(!fdict.count(rightHalfPathToBeSolve)) {
                 SK66(*iter, source, dest, iterCount-1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
             }

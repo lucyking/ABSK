@@ -1,3 +1,4 @@
+all:future_net
 future_net:route.o io.o future_net.o
 	g++ -g -o future_net route.o io.o future_net.o
 	cp future_net ./Debug/

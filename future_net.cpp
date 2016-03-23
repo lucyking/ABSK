@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     char *demand;
     int demand_num;
 
+
     char *topo_file = argv[1];
     edge_num = read_file(topo, 5000, topo_file);
     if (edge_num == 0)
