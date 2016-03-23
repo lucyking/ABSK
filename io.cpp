@@ -105,7 +105,7 @@ INLINE void write_file(const bool cover, const char * const buff, const char * c
     if (buff == NULL)
         return;
 
-    const char *write_type = cover ? "w" : "a";//1:覆盖写文件，0:追加写文件
+    const char *write_type = cover ? "w" : "a";// overrite : append
     FILE *fp = fopen(filename, write_type);
     if (fp == NULL)
     {
