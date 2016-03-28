@@ -270,7 +270,7 @@ void Dijkstra(const Graph & graph, const EdgeInfoDict & edgeInfoDict,int source,
     // 第二步： 访问最佳结点的所有邻接点， 刷新或扩充候选人集合
     while(!candidates.empty()) {
         // 取出候选区最近的结点, 加入已处理集合中， 并将该结点当前的路径存储到最短路径字典中
-        Candidate bestCandidate = *(candidates.begin());
+        Candidate bestCandidate = *(candidates.begin());    // Min Heap
         candidates.erase(bestCandidate);
         processed.insert(bestCandidate.nodeNo);
         Path path;
