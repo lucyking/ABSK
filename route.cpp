@@ -258,7 +258,7 @@ void Dijkstra(const Graph & graph, const EdgeInfoDict & edgeInfoDict,int source,
                 candidate.nodeNo = *iter;
                 const EdgeInfo & edgeInfo = pEdgeInfo->second;
                 candidate.edgePath.push_back(edgeInfo.first);
-                candidate.nodePath.push_back(source);
+                candidate.nodePath.push_back(source);      // <-- may here's a bug: push_back(*iter) is better
                 candidate.pathCost = edgeInfo.second;
                 candidates.insert(candidate);
             }
