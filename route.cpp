@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <iostream>
 
 //typedef
 typedef std::pair<int, int> Edge;           // <start,dest>
@@ -74,7 +75,8 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict);
+        ShortestPathDict &pathDict,
+        std::set<int> vied);
 
 //--------------------------------------------------------------------------------------------------------赛题入口
 void search_route(char *graphStream[5000], int edge_num, char *conditionsStream) {
@@ -86,6 +88,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     ShortestPathDict pathDict;
     SK66_D_dict ddict;
     SK66_F_dict fdict;
+    std::set<int> vied;
 
     ReadGraphData(graphStream, graph, edgeInfoDict);                 // read a.csv
     ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
@@ -96,8 +99,8 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 
 
 
-
-    SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
+    vied.insert(source);
+    SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict,vied);
 
     std::pair<std::pair<int, int>, int> key;
     key.first.first = source;
@@ -257,8 +260,10 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         const std::set<int> &sourceAdjs = pSourceAdjs->second;
         for (std::set<int>::const_iterator iter = sourceAdjs.begin(); iter != sourceAdjs.end(); ++iter) {
             // 排除必须要排除的点
-            if (withoutPoint.count(*iter))
+            if (withoutPoint.count(*iter)) {
+                std::cout << ">>>" << *iter << std::endl;
                 continue;
+            }
 
             EdgeInfoDict::const_iterator pEdgeInfo = edgeInfoDict.find(Edge(source, *iter));
             if (pEdgeInfo != edgeInfoDict.end()) {
@@ -334,7 +339,8 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict) {
+        ShortestPathDict &pathDict,
+        std::set<int> myvied) {
     // 当迭代次数为0时， 直接计算node->dest单源最短路径，存入结果字典里
     if (iterCount == 0) {
         std::pair<int, int> pathToBeSolve(node, dest);
@@ -365,13 +371,15 @@ void SK66(
         minCostPath.first = 0x7fffffff;
 
         for (Conditions::const_iterator iter = conditions.begin(); iter != conditions.end(); ++iter) {
-            if (*iter == node)
+            if (*iter == node || myvied.count(*iter)) {
+//                std::cout << *iter << std::endl;
                 continue;        // not via this node itself
+            }
 
             // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
             std::pair<int, int> leftHalfPathToBeSolve(node, *iter);
             if (!pathDict.count(leftHalfPathToBeSolve)) {
-                Dijkstra(graph, edgeInfoDict, node, pathDict);
+                Dijkstra(graph, edgeInfoDict, node, pathDict,myvied);
             }
             if (!pathDict.count(leftHalfPathToBeSolve)) {
                 Path leftHalfPath;
@@ -394,7 +402,9 @@ void SK66(
             rightHalfPathToBeSolve.first.second = dest;
             rightHalfPathToBeSolve.second = iterCount - 1; //迭代次数
             if (!fdict.count(rightHalfPathToBeSolve)) {
-                SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
+                std::set<int> myvied2 = myvied;
+                myvied2.insert(*iter);
+                SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict,myvied2);
             }
             if (ddict[leftHalfPathToBeSolve].first + fdict[rightHalfPathToBeSolve].first < minCostPath.first) {
                 minCostPath.first = ddict[leftHalfPathToBeSolve].first + fdict[rightHalfPathToBeSolve].first;
