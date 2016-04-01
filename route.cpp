@@ -4,9 +4,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <iostream>
-
-using namespace std;
 
 //typedef
 typedef std::pair<int, int> Edge;           // <start,dest>
@@ -22,10 +19,7 @@ typedef std::pair<
         >
 > Path;           // 路径的定义， 由<权重， <经过的结点的集合，经过的边的有序集合>>构成, 经过的结点集合不包括最后一点， 即终点的结点编号
 typedef std::map<
-        std::pair<
-                std::pair<int, int>,
-                int,   // ck
-        >,
+        std::pair<int, int>,
         Path
 > ShortestPathDict;   // 最短路径字典， <<起点， 终点>， 路径>
 typedef ShortestPathDict SK66_D_dict;        // SK66算法中D(v_i, v_j)的定义
@@ -40,7 +34,6 @@ typedef std::map<
 typedef struct Candidate {                      // Dijkstra算法中的候选人
     int nodeNo;
     int pathCost;
-    int k=0;
     std::vector<int> nodePath;
     std::vector<int> edgePath;
 
@@ -70,8 +63,7 @@ void PrintConditions(int, int, const Conditions &);  //向控制台输出约束�
 void PrintShortestPathDict(const ShortestPathDict &);  //向控制台输出最短路径字典中的信息
 //--------------------------------------------------------------------------------------------------------算法函数
 void Dijkstra(const Graph &, const EdgeInfoDict &, int, ShortestPathDict &,
-              const std::set<int> &,                 //conditions
-              std::set<int> & = std::set<int>());    //Dijkstra单源最短路径算法
+              const std::set<int> & = std::set<int>());    //Dijkstra单源最短路径算法
 void SK66(
         int node,
         int source,
@@ -82,8 +74,7 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict,
-        std::set<int> vied);
+        ShortestPathDict &pathDict);
 
 //--------------------------------------------------------------------------------------------------------赛题入口
 void search_route(char *graphStream[5000], int edge_num, char *conditionsStream) {
@@ -95,7 +86,6 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     ShortestPathDict pathDict;
     SK66_D_dict ddict;
     SK66_F_dict fdict;
-    std::set<int> vied;
 
     ReadGraphData(graphStream, graph, edgeInfoDict);                 // read a.csv
     ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
@@ -106,8 +96,8 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 
 
 
-    vied.insert(source);
-    SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict,vied);
+
+    SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
 
     std::pair<std::pair<int, int>, int> key;
     key.first.first = source;
@@ -252,14 +242,11 @@ void PrintShortestPathDict(const ShortestPathDict &pathDict) {
 
 //--------------------------------------------------------------------------------------------------------算法函数实现
 void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, ShortestPathDict &pathDict,
-              const std::set<int> &conditions,
-              std::set<int> &withoutPoint,
-              int &iterCount) {
+              const std::set<int> &withoutPoint) {
 
 
     std::set<int> processed;        // 已处理过的结点
     std::set<Candidate> candidates; // 待处理的结点， 配合上Candidate的定义， 这便是一个小顶堆
-    int ck=0;
 
     // 算法初始化，
     //1.起点加入processed集合;
@@ -270,18 +257,12 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         const std::set<int> &sourceAdjs = pSourceAdjs->second;
         for (std::set<int>::const_iterator iter = sourceAdjs.begin(); iter != sourceAdjs.end(); ++iter) {
             // 排除必须要排除的点
-            if (withoutPoint.count(*iter)) {
-                std::cout << ">>>" << *iter << std::endl;
+            if (withoutPoint.count(*iter))
                 continue;
-            }
-            if (conditions.count(*iter)){
-                ck++;
-            }
 
             EdgeInfoDict::const_iterator pEdgeInfo = edgeInfoDict.find(Edge(source, *iter));
             if (pEdgeInfo != edgeInfoDict.end()) {
                 Candidate candidate;
-                candidate.k=ck;
                 candidate.nodeNo = *iter;
                 const EdgeInfo &edgeInfo = pEdgeInfo->second;
                 candidate.edgePath.push_back(edgeInfo.first);
@@ -304,7 +285,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         path.first = bestCandidate.pathCost;
         path.second.first = bestCandidate.nodePath;
         path.second.second = bestCandidate.edgePath;
-        pathDict[std::pair< <std::pair>,int>(std::pair<int, int>(source, bestCandidate.nodeNo),bestCandidate.k)] = path;   // shortest pathDict only get value here
+        pathDict[std::pair<int, int>(source, bestCandidate.nodeNo)] = path;   // shortest pathDict only get value here
 
         // 访问最佳候选人的所有邻接点， 以刷新或扩充候选结点
         Graph::const_iterator PBestCandidateAdjs = graph.find(bestCandidate.nodeNo);
@@ -353,14 +334,12 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict,
-        std::set<int> myvied) {
+        ShortestPathDict &pathDict) {
     // 当迭代次数为0时， 直接计算node->dest单源最短路径，存入结果字典里
     if (iterCount == 0) {
         std::pair<int, int> pathToBeSolve(node, dest);
         if (!pathDict.count(pathToBeSolve))
-            //Dijkstra(graph, edgeInfoDict, node, pathDict);
-            Dijkstra(graph, edgeInfoDict, node, pathDict,conditions,myvied,iterCount);
+            Dijkstra(graph, edgeInfoDict, node, pathDict);
         if (!pathDict.count(pathToBeSolve)) {
             std::pair<std::pair<int, int>, int> key;   // < <起始点，终止点>,迭代次数>
             key.first = pathToBeSolve;
@@ -386,18 +365,13 @@ void SK66(
         minCostPath.first = 0x7fffffff;
 
         for (Conditions::const_iterator iter = conditions.begin(); iter != conditions.end(); ++iter) {
-            if (*iter == node || myvied.count(*iter)) {
-//                std::cout << *iter << std::endl;
+            if (*iter == node)
                 continue;        // not via this node itself
-            }
 
             // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
-            std::pair<std::pair<int, int>, int> leftHalfPathToBeSolve;
-            leftHalfPathToBeSolve.first.first = node;
-            leftHalfPathToBeSolve.first.second =*iter;
-            leftHalfPathToBeSolve.second = iterCount;
+            std::pair<int, int> leftHalfPathToBeSolve(node, *iter);
             if (!pathDict.count(leftHalfPathToBeSolve)) {
-                Dijkstra(graph, edgeInfoDict, node, pathDict,conditions,myvied,iterCount);
+                Dijkstra(graph, edgeInfoDict, node, pathDict);
             }
             if (!pathDict.count(leftHalfPathToBeSolve)) {
                 Path leftHalfPath;
@@ -418,11 +392,9 @@ void SK66(
             std::pair<std::pair<int, int>, int> rightHalfPathToBeSolve;
             rightHalfPathToBeSolve.first.first = *iter;
             rightHalfPathToBeSolve.first.second = dest;
-            rightHalfPathToBeSolve.second = iterCount - 1; //迭代次数    <------  important
+            rightHalfPathToBeSolve.second = iterCount - 1; //迭代次数
             if (!fdict.count(rightHalfPathToBeSolve)) {
-                std::set<int> myvied2 = myvied;
-                myvied2.insert(*iter);
-                SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict,myvied2);
+                SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict);
             }
             if (ddict[leftHalfPathToBeSolve].first + fdict[rightHalfPathToBeSolve].first < minCostPath.first) {
                 minCostPath.first = ddict[leftHalfPathToBeSolve].first + fdict[rightHalfPathToBeSolve].first;
