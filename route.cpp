@@ -276,7 +276,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
 //                FullPath::const_iterator  fp = fullDict.find(pair(source,*iter));
                 EdgeInfoDict::const_iterator pEdgeInfo = edgeInfoDict.find(Edge(source, *iter));
                 if (pEdgeInfo != edgeInfoDict.end()) {
-                    //processed.insert(source);
+                    processed.insert(source);
                     const EdgeInfo &xedgeInfo = pEdgeInfo->second;
                     Path xpath;
                     xpath.first = xedgeInfo.second;
@@ -332,8 +332,6 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
             int adjNode = *iter;
             if (*iter==4)
                 cout<<*iter;
-            if (processed.count(adjNode) || withoutPoint.count(adjNode))
-                continue;
 
             Candidate candidate;
             candidate.nodeNo = adjNode;
@@ -350,7 +348,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
             }
 
             if(conditions.count(*iter)){
-                //processed.insert(*iter);
+                processed.insert(*iter);
                 Path xpath;
                 xpath.first = candidate.pathCost;
                 xpath.second.first = candidate.nodePath;
@@ -361,6 +359,9 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
 
             }
             else {
+
+                if (processed.count(adjNode) || withoutPoint.count(adjNode))
+                    continue;
 
                 std::set<Candidate>::iterator temp = candidates.find(candidate);
                 if (temp == candidates.end() || (*temp).pathCost > candidate.pathCost) {
