@@ -175,20 +175,28 @@ void ReadConditionsData(char *conditionsStream, int &source, int &dest, Conditio
 }
 
 //--------------------------------------------------------------------------------------------------------测试函数实现
-void PrintFullDict(const FullPath &fullPath) {
+void const PrintFullDict(const FullPath &fullPath,const Conditions &conditions) {
     printf("-------FullDict Info-------\n");
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
         int src = (iter->first).first;
         int dest = (iter->first).second;
-        printf("[%d,%d] ", src, dest);
+        printf("[%d,%d]\n", src, dest);
         const set<Path> &v = iter->second;
         for (set<Path>::const_iterator sp = v.begin(); sp != v.end(); ++sp) {
             const Path &path = *sp;
             const vector<int> &pathOfPoint = path.second.first;
             const vector<int> &pathOfEdge = path.second.second;
-            for (std::vector<int>::const_iterator vp = pathOfEdge.begin(); vp != pathOfEdge.end(); ++vp) {
+            for (std::vector<int>::const_iterator vp = pathOfPoint.begin(); vp != pathOfPoint.end(); ++vp) {
                 cout << (*vp) << "|";
+                int i=0;
+                if(conditions.count(*vp)){
+                    i++;
+                    if(i>1)
+                        cout << "KKK";
+                }
             }
+            cout << endl;
+
         }
         cout << endl;
     }
@@ -412,9 +420,11 @@ void SK66(
     // 当迭代次数为0时， 直接计算node->dest单源最短路径，存入结果字典里
     if (iterCount == 0) {
         std::pair<int, int> pathToBeSolve(node, dest);
-        if (!pathDict.count(pathToBeSolve))
+//        if (!pathDict.count(pathToBeSolve))
+        if (!fullDict.count(pathToBeSolve))
             Dijkstra(graph, edgeInfoDict, node, pathDict,fullDict,conditions);
-        if (!pathDict.count(pathToBeSolve)) {
+//        if (!pathDict.count(pathToBeSolve)) {
+        if (!fullDict.count(pathToBeSolve)){
             std::pair<std::pair<int, int>, int> key;   // < <起始点，终止点>,迭代次数>
             key.first = pathToBeSolve;
             key.second = 0;
@@ -444,16 +454,19 @@ void SK66(
 
             // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
             std::pair<int, int> leftHalfPathToBeSolve(node, *iter);
-            if (!pathDict.count(leftHalfPathToBeSolve)) {
+//            if (!pathDict.count(leftHalfPathToBeSolve)) {
+            if (!fullDict.count(leftHalfPathToBeSolve)) {
                 Dijkstra(graph, edgeInfoDict, node, pathDict,fullDict,conditions);
             }
-            if (!pathDict.count(leftHalfPathToBeSolve)) {
+//            if (!pathDict.count(leftHalfPathToBeSolve)) {
+            if (!fullDict.count(leftHalfPathToBeSolve)) {
                 Path leftHalfPath;
                 leftHalfPath.first = 0xffffff;
                 ddict[leftHalfPathToBeSolve] = leftHalfPath;
             } else {
-                ShortestPathDict::const_iterator PPath = pathDict.find(leftHalfPathToBeSolve);
-                Path leftHalfPath = PPath->second;
+//                ShortestPathDict::const_iterator PPath = pathDict.find(leftHalfPathToBeSolve);
+                set<Path> PPath = fullDict[leftHalfPathToBeSolve];  // not in set<Path>,
+                Path leftHalfPath = PPath[0];                       // real can not
                 ddict[leftHalfPathToBeSolve] = leftHalfPath;
             }
             // 计算F(v_l, t)
@@ -494,5 +507,5 @@ void SK66(
 
         fdict[key] = minCostPath;
     }
-    PrintFullDict(fullDict);
+    PrintFullDict(fullDict,conditions);
 }
