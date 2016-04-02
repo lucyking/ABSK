@@ -71,6 +71,7 @@ void ReadConditionsData(char *, int &, int &, Conditions &);    // 读取约束�
 void PrintGraph(const Graph &, const EdgeInfoDict &);   //向控制台输出图信息
 void PrintConditions(int, int, const Conditions &);  //向控制台输出约束条件信息
 void PrintShortestPathDict(const ShortestPathDict &);  //向控制台输出最短路径字典中的信息
+void PrintFullDict(const FullPath &);
 //--------------------------------------------------------------------------------------------------------算法函数
 void Dijkstra(const Graph &, const EdgeInfoDict &, int, ShortestPathDict &,FullPath &,const Conditions &,
               const std::set<int> & = std::set<int>());    //Dijkstra单源最短路径算法
@@ -174,6 +175,27 @@ void ReadConditionsData(char *conditionsStream, int &source, int &dest, Conditio
 }
 
 //--------------------------------------------------------------------------------------------------------测试函数实现
+void PrintFullDict(const FullPath &fullPath) {
+    printf("-------FullDict Info-------\n");
+    for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
+        int src = (iter->first).first;
+        int dest = (iter->first).second;
+        printf("[%d,%d] ", src, dest);
+        const set<Path> &v = iter->second;
+        for (set<Path>::const_iterator sp = v.begin(); sp != v.end(); ++sp) {
+            const Path &path = *sp;
+            const vector<int> &pathOfPoint = path.second.first;
+            const vector<int> &pathOfEdge = path.second.second;
+            for (std::vector<int>::const_iterator vp = pathOfEdge.begin(); vp != pathOfEdge.end(); ++vp) {
+                cout << (*vp) << "|";
+            }
+        }
+        cout << endl;
+    }
+
+}
+
+
 void PrintGraph(const Graph &graph, const EdgeInfoDict &edgeInfoDict) {
     int edgeCount = 0;
     int errorCount = 0;
@@ -282,9 +304,9 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                     xpath.first = xedgeInfo.second;
                     xpath.second.first.push_back(*iter);
                     xpath.second.second.push_back(xedgeInfo.first);
-                    set<Path> x;
-                    x.insert(xpath);
-                    fullDict[pair<int,int>(source,*iter)]=x;
+//                    set<Path> x;
+//                    x.insert(xpath);
+                    fullDict[pair<int,int>(source,*iter)].insert(xpath);
 //                    if(!fullDict[source,*iter].find(xpath)) {
 //                        fullDict[source, *iter].insert(xpath);
 //                    }
@@ -313,8 +335,8 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         Candidate bestCandidate = *(candidates.begin());    // Min Heap
         candidates.erase(bestCandidate);
         processed.insert(bestCandidate.nodeNo);
-        if(bestCandidate.nodeNo==4)
-            cout<<bestCandidate.nodeNo;
+//        if(bestCandidate.nodeNo==4)
+//            cout<<bestCandidate.nodeNo;
         Path path;
         path.first = bestCandidate.pathCost;
         path.second.first = bestCandidate.nodePath;
@@ -330,8 +352,8 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         const std::set<int> &bestCandidateAdjs = PBestCandidateAdjs->second;
         for (std::set<int>::const_iterator iter = bestCandidateAdjs.begin(); iter != bestCandidateAdjs.end(); ++iter) {
             int adjNode = *iter;
-            if (*iter==4)
-                cout<<*iter;
+//            if (*iter==4)
+//                cout<<*iter;
 
             Candidate candidate;
             candidate.nodeNo = adjNode;
@@ -353,9 +375,9 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                 xpath.first = candidate.pathCost;
                 xpath.second.first = candidate.nodePath;
                 xpath.second.second = candidate.edgePath;
-                set<Path> x;
-                x.insert(xpath);
-                fullDict[pair<int,int>(bestCandidate.nodeNo,*iter)]=x;
+//                set<Path> x;
+//                x.insert(xpath);
+                fullDict[pair<int,int>(source,*iter)].insert(xpath);
 
             }
             else {
@@ -472,4 +494,5 @@ void SK66(
 
         fdict[key] = minCostPath;
     }
+    PrintFullDict(fullDict);
 }
