@@ -75,7 +75,7 @@ void PrintConditions(int, int, const Conditions &);  //向控制台输出约束�
 void PrintShortestPathDict(const ShortestPathDict &);  //向控制台输出最短路径字典中的信息
 void PrintFullDict(const FullPath &);
 //--------------------------------------------------------------------------------------------------------算法函数
-void Dijkstra(const Graph &, const EdgeInfoDict &, int, ShortestPathDict &,FullPath &,const Conditions &,
+void Dijkstra(const Graph &, const EdgeInfoDict &, int, AdvancedPathDict &,FullPath &,const Conditions &,
               const std::set<int> & = std::set<int>());    //Dijkstra单源最短路径算法
 void SK66(
         int node,
@@ -87,7 +87,7 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict,
+        AdvancedPathDict &pathDict,
         FullPath &fullDict);
 
 //--------------------------------------------------------------------------------------------------------赛题入口
@@ -97,7 +97,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     int source;
     int dest;
     Conditions conditions;
-    ShortestPathDict pathDict;
+    AdvancedPathDict pathDict;
     FullPath fullDict;
     SK66_D_dict ddict;
     SK66_F_dict fdict;
@@ -285,7 +285,7 @@ void PrintShortestPathDict(const ShortestPathDict &pathDict) {
 }
 
 //--------------------------------------------------------------------------------------------------------算法函数实现
-void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, ShortestPathDict &pathDict,
+void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, AdvancedPathDict &pathDict,
               FullPath &fullDict, const Conditions &conditions, const std::set<int> &withoutPoint) {
 
 
@@ -347,11 +347,11 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         processed.insert(bestCandidate.nodeNo);
 //        if(bestCandidate.nodeNo==4)
 //            cout<<bestCandidate.nodeNo;
-        Path path;
-        path.first = bestCandidate.pathCost;
-        path.second.first = bestCandidate.nodePath;
-        path.second.second = bestCandidate.edgePath;
-        pathDict[std::pair<int, int>(source, bestCandidate.nodeNo)] = path;   // shortest pathDict only get value here
+//        Path path;
+//        path.first = bestCandidate.pathCost;
+//        path.second.first = bestCandidate.nodePath;
+//        path.second.second = bestCandidate.edgePath;
+//        pathDict[std::pair<int, int>(source, bestCandidate.nodeNo)] = path;   // shortest pathDict only get value here
 
         // 访问最佳候选人的所有邻接点， 以刷新或扩充候选结点
         Graph::const_iterator PBestCandidateAdjs = graph.find(bestCandidate.nodeNo);
@@ -388,6 +388,10 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
 //                set<Path> x;
 //                x.insert(xpath);
                 fullDict[pair<int,int>(source,*iter)].insert(xpath);
+                pathDict[std::pair<int, int>(source, bestCandidate.nodeNo)].insert(
+                        pair<int,vector<int>>(candidate.pathCost,candidate.nodePath)
+                );
+
 
             }
             else {
@@ -417,7 +421,7 @@ void SK66(
         const Conditions &conditions,
         SK66_D_dict &ddict,
         SK66_F_dict &fdict,
-        ShortestPathDict &pathDict,
+        AdvancedPathDict &pathDict,
         FullPath &fullDict) {
     // 当迭代次数为0时， 直接计算node->dest单源最短路径，存入结果字典里
     if (iterCount == 0) {
@@ -437,9 +441,9 @@ void SK66(
             std::pair<std::pair<int, int>, int> key;
             key.first = pathToBeSolve;
             key.second = 0;
-            ShortestPathDict::const_iterator PPath = pathDict.find(pathToBeSolve);  // Dj search get the solved result
-            Path path = PPath->second;
-            fdict[key] = path;
+            AdvancedPathDict::const_iterator PPath = pathDict.find(pathToBeSolve);  // Dj search get the solved result
+            //Path path = PPath->second;
+            //fdict[key] = path;
         }
     } else {
         // 当迭代次数大于0的时候
@@ -468,8 +472,8 @@ void SK66(
             } else {
 //                ShortestPathDict::const_iterator PPath = pathDict.find(leftHalfPathToBeSolve);
                 set<Path> PPath = fullDict[leftHalfPathToBeSolve];  // this right
-                Path leftHalfPath = PPath[0];                       // this wrong
-                ddict[leftHalfPathToBeSolve] = leftHalfPath;
+                //Path leftHalfPath = PPath[pair<int,int>(0,0)];                       // this wrong
+                //ddict[leftHalfPathToBeSolve] = leftHalfPath;
             }
             // 计算F(v_l, t)
 
