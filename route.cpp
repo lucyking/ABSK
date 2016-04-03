@@ -27,6 +27,8 @@ typedef map<
         set<Path>
         > FullPath;
 
+typedef map<pair<int,int>,set<pair<int,vector<int>>>> AdvancedPathDict;
+
 typedef std::map<
         std::pair<int, int>,
         Path
@@ -465,12 +467,11 @@ void SK66(
                 ddict[leftHalfPathToBeSolve] = leftHalfPath;
             } else {
 //                ShortestPathDict::const_iterator PPath = pathDict.find(leftHalfPathToBeSolve);
-                set<Path> PPath = fullDict[leftHalfPathToBeSolve];  // not in set<Path>,
-                Path leftHalfPath = PPath[0];                       // real can not
+                set<Path> PPath = fullDict[leftHalfPathToBeSolve];  // this right
+                Path leftHalfPath = PPath[0];                       // this wrong
                 ddict[leftHalfPathToBeSolve] = leftHalfPath;
             }
             // 计算F(v_l, t)
-
 
 
 
