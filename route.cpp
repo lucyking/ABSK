@@ -98,12 +98,17 @@ void KKK(
         AdvancedPathDict &,
         FullPath &,
         int ,
-        set<int>);
+        set<int>,
+        vector<int> okpath,
+        set<vector<int>> &allokpath);
 
-vector<set<Path>> LocateNode(int node,set<int> &dest,const FullPath  &fullPath){
+vector<set<Path>> LocateNode(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
     vector<set<Path>> sum;
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
-        if ( node == (iter->first).first){
+//        cout <<"[XXXX]\n";
+//        printf("[%d,%d]\n",(iter->first).first,(iter->first).second );
+//        cout<< (iter->first).first << (iter->first).second << endl;
+        if ( node == (iter->first).first && !processed.count((iter->first).second)){
             dest.insert((iter->first).second);
             sum.push_back(iter->second);
         }
@@ -127,6 +132,8 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
     int iterCount = conditions.size();
     set<int> processed;
+    vector<int> okpath;
+    set<vector<int>> allokpath;
 
 //    std::set<int> without;
 //    without.insert(1);
@@ -135,19 +142,21 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 
 
 
-    conditions.insert(0); // insert the src node
-    conditions.insert(4); // dst should not act as src node
+//    conditions.insert(1); // insert the src node
+//    conditions.insert(429); // dst should not act as src node
 
     for (Conditions::const_iterator iter = conditions.begin(); iter != conditions.end(); ++iter) {
         Dijkstra(graph, edgeInfoDict, *iter, pathDict, fullDict, conditions);
     }
-    PrintFullDict(fullDict, conditions);
-    processed.insert(0);
-    KKK(0,0,325,conditions,pathDict,fullDict,iterCount,processed);
+//    PrintFullDict(fullDict, conditions);
+//    return;
+//    processed.insert(0);   // <--  0|129|220|...|  start with 0
+    KKK(1,1,429,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
+    cout << "the ok path size>>>" <<allokpath.size() << endl;
 
-    for(set<int>::const_iterator beta=processed.begin();beta!=processed.end();beta++){
-        cout << *beta << "|";
-    }
+//    for(set<int>::const_iterator beta=processed.begin();beta!=processed.end();beta++){
+//        cout << *beta << "|";
+//    }
 //    SK66(source, source, dest, conditions.size(), graph, edgeInfoDict, conditions, ddict, fdict, pathDict,fullDict);
 
     std::pair<std::pair<int, int>, int> key;
@@ -348,7 +357,8 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                     const EdgeInfo &xedgeInfo = pEdgeInfo->second;
                     Path xpath;
                     xpath.first = xedgeInfo.second;
-                    xpath.second.first.push_back(*iter);
+                    xpath.second.first.push_back(source);      // push_back src
+                    xpath.second.first.push_back(*iter);       // push rear
                     xpath.second.second.push_back(xedgeInfo.first);
 //                    set<Path> x;
 //                    x.insert(xpath);
@@ -400,6 +410,8 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         const std::set<int> &bestCandidateAdjs = PBestCandidateAdjs->second;
         for (std::set<int>::const_iterator iter = bestCandidateAdjs.begin(); iter != bestCandidateAdjs.end(); ++iter) {
             int adjNode = *iter;
+            if(*iter==source)
+                continue;
 //            if (*iter==4)
 //                cout<<*iter;
 
@@ -422,6 +434,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                 Path xpath;
                 xpath.first = candidate.pathCost;
                 xpath.second.first = candidate.nodePath;
+                xpath.second.first.push_back(*iter);           // push_back rear
                 xpath.second.second = candidate.edgePath;
 //                set<Path> x;
 //                x.insert(xpath);
@@ -456,22 +469,28 @@ void KKK(int node,
          AdvancedPathDict &pathDict,
          FullPath &fullPath,
          int iterCount,
-         set<int> processed) {
+         set<int> processed,
+         vector<int> okpath,
+         set<vector<int>> &allokpath) {
 
 //    set<int> processed;
 //    processed.insert(node);
+    processed.erase(node);
+
     set<int> next;
     set<int> myprocessed = processed;
+    int myiterCount = iterCount -1;
 
-    vector<set<Path>> vector_set_Path = LocateNode(node, next, fullPath);
+    vector<set<Path>> vector_set_Path = LocateNode(node, next, fullPath,myprocessed);
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
 //    cout << LocateNode(0,next,fullPath).size() << endl;
 //    cout << next.size()<<endl;
 
-    if (iterCount == 0) {
-        cout<<iterCount;
+    if (next.size() == 0) {
+//        cout<<iterCount<<endl;
+        allokpath.insert(okpath);
         return;
     }
     if (iterCount == -1) {
@@ -479,13 +498,16 @@ void KKK(int node,
         return;
     }
 //    processed.insert(node);
-    for (vector<set<Path>>::const_iterator SetPathIter = vector_set_Path.begin();
-         SetPathIter != vector_set_Path.end(); ++SetPathIter) {
+    for (vector<set<Path>>::const_iterator SetPathIter = vector_set_Path.begin();SetPathIter != vector_set_Path.end(); ++SetPathIter) {
         set<Path> setPath = *SetPathIter;
         for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
             const vector<int> &pointInfo = (*PathIter).second.first;
 //            cout << ">>>"<< pointInfo.size() <<endl;
             bool flag = true;
+            if(node==1&& conditions.count(pointInfo[pointInfo.size()-1])) {
+                myprocessed.clear();
+//                cout << "[1,33]\n";
+            }
             for (int i = 0; i < pointInfo.size(); i++) {
                 if (myprocessed.count(pointInfo[i])) {
                     flag = false;
@@ -497,14 +519,28 @@ void KKK(int node,
             if (flag == false)
                 continue;
             else {
-                for (int i = 0; i < pointInfo.size(); i++)
+                for (int i = 0; i < pointInfo.size(); i++) {
                     myprocessed.insert(pointInfo[i]);
-
-                for (set<int>::const_iterator beta = next.begin(); beta != next.end(); beta++) {
-                    if (*beta == node || processed.count(*beta))
-                        continue;
-                    KKK(*beta, src, dest, conditions, pathDict, fullPath, --iterCount, myprocessed);
+                    okpath.push_back(pointInfo[i]);
                 }
+                int beta;
+                beta = okpath.back();
+                if(beta==160)
+                    cout<< "debug point\n";
+                okpath.pop_back();
+                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
+/*
+                for (set<int>::const_iterator beta = next.begin(); beta != next.end(); beta++) {
+                    if (iterCount==0)
+                        break;
+                    if (*beta == node || myprocessed.count(*beta))
+                        continue;
+                    if(iterCount<=0)
+                        break;
+                    KKK(*beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
+                }
+*/
+ //                    cout << iterCount;
 //            cout << endl;
 
             }
