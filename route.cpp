@@ -74,7 +74,17 @@ void PrintGraph(const Graph &, const EdgeInfoDict &);   //向控制台输出图�
 void PrintConditions(int, int, const Conditions &);  //向控制台输出约束条件信息
 void PrintShortestPathDict(const ShortestPathDict &);  //向控制台输出最短路径字典中的信息
 void PrintFullDict(const FullPath &,const Conditions &);
+void PrintSetVectorInt(const set<vector<int>> &,const set<int> &);
 //--------------------------------------------------------------------------------------------------------算法函数
+vector<int> getKeyVector(const vector<int> &okpath,const Conditions &conditions){
+    vector<int> result;
+    for (int i=0;i<okpath.size();++i) {
+        if(conditions.count(okpath[i]))
+            result.push_back(okpath[i]);
+    }
+    return result;
+
+}
 void Dijkstra(const Graph &, const EdgeInfoDict &, int, AdvancedPathDict &,FullPath &,const Conditions &,
               const std::set<int> & = std::set<int>());    //Dijkstra单源最短路径算法
 void SK66(
@@ -140,19 +150,25 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    without.insert(2);
 
 
+    set<int> without;
+    without.insert(source);
 
 
-//    conditions.insert(1); // insert the src node
-//    conditions.insert(429); // dst should not act as src node
-
+    conditions.insert(source); // insert the src node
+    conditions.insert(dest); // dst should not act as src node
     for (Conditions::const_iterator iter = conditions.begin(); iter != conditions.end(); ++iter) {
-        Dijkstra(graph, edgeInfoDict, *iter, pathDict, fullDict, conditions);
+        if(*iter==dest)
+            continue;
+        Dijkstra(graph, edgeInfoDict, *iter, pathDict, fullDict, conditions,without);
     }
-//    PrintFullDict(fullDict, conditions);
+    PrintFullDict(fullDict, conditions);
+    conditions.erase(source); // insert the src node
+//    conditions.erase(dest); // dst should not act as src node
 //    return;
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
-    KKK(1,1,429,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
+    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
     cout << "the ok path size>>>" <<allokpath.size() << endl;
+    PrintSetVectorInt(allokpath,conditions);
 
 //    for(set<int>::const_iterator beta=processed.begin();beta!=processed.end();beta++){
 //        cout << *beta << "|";
@@ -221,7 +237,25 @@ void ReadConditionsData(char *conditionsStream, int &source, int &dest, Conditio
     }
 }
 
-//--------------------------------------------------------------------------------------------------------测试函数实现
+//---pr fx-----------------------------------------------------------------------------------------------------测试函数实现
+void PrintSetVectorInt(const set<vector<int>> &allokpath,const set<int> &conditions){
+    for (set<vector<int>>::const_iterator SetIter = allokpath.begin();SetIter != allokpath.end(); ++SetIter) {
+        vector<int> v= *SetIter;
+        vector<int> c;
+        c.clear();
+        for (int i=0;i<v.size();++i) {
+                cout << v[i] <<"|";
+            if(conditions.count(v[i]))
+                c.push_back(v[i]);
+            }
+        cout << "\n[";
+        for (int i=0;i<c.size();i++)
+            cout << c[i] << ",";
+        cout << "]\n";
+        cout << endl;
+    }
+
+}
 void PrintFullDict(const FullPath &fullPath,const Conditions &conditions) {
     printf("-------FullDict Info-------\n");
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
@@ -410,7 +444,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
         const std::set<int> &bestCandidateAdjs = PBestCandidateAdjs->second;
         for (std::set<int>::const_iterator iter = bestCandidateAdjs.begin(); iter != bestCandidateAdjs.end(); ++iter) {
             int adjNode = *iter;
-            if(*iter==source)
+            if(*iter==source || withoutPoint.count(*iter))
                 continue;
 //            if (*iter==4)
 //                cout<<*iter;
@@ -479,35 +513,53 @@ void KKK(int node,
 
     set<int> next;
     set<int> myprocessed = processed;
+    vector<int> myokpath =okpath;
+    vector<int> tmp=okpath;
     int myiterCount = iterCount -1;
 
+    // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
     vector<set<Path>> vector_set_Path = LocateNode(node, next, fullPath,myprocessed);
+
+    tmp.push_back(node);
+    vector<int> key = getKeyVector(tmp,conditions);
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
 //    cout << LocateNode(0,next,fullPath).size() << endl;
 //    cout << next.size()<<endl;
 
-    if (next.size() == 0) {
+//    if (next.size() == 10) {
+    if (key.size() == conditions.size()) {
 //        cout<<iterCount<<endl;
-        allokpath.insert(okpath);
+        myokpath.push_back(node);
+        allokpath.insert(myokpath);
+//        PrintSetVectorInt(allokpath,conditions);
+//        cout << "\nSIZE->" << allokpath.size()<<endl;
         return;
     }
-    if (iterCount == -1) {
-        cout<<iterCount;
+    if (iterCount < 0) {
+        cout<<"iC<0 "<<key.size();
         return;
     }
 //    processed.insert(node);
     for (vector<set<Path>>::const_iterator SetPathIter = vector_set_Path.begin();SetPathIter != vector_set_Path.end(); ++SetPathIter) {
         set<Path> setPath = *SetPathIter;
+        myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
+        myokpath = okpath;
         for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
+            myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
+            myokpath = okpath;
             const vector<int> &pointInfo = (*PathIter).second.first;
 //            cout << ">>>"<< pointInfo.size() <<endl;
             bool flag = true;
-            if(node==1&& conditions.count(pointInfo[pointInfo.size()-1])) {
+            /*
+//            if(node==1&& conditions.count(pointInfo[pointInfo.size()-1])) {
+            if(node==1&& pointInfo[pointInfo.size()-1]==33) {
                 myprocessed.clear();
+                okpath.clear();
 //                cout << "[1,33]\n";
             }
+             */
             for (int i = 0; i < pointInfo.size(); i++) {
                 if (myprocessed.count(pointInfo[i])) {
                     flag = false;
@@ -521,14 +573,19 @@ void KKK(int node,
             else {
                 for (int i = 0; i < pointInfo.size(); i++) {
                     myprocessed.insert(pointInfo[i]);
-                    okpath.push_back(pointInfo[i]);
+                    myokpath.push_back(pointInfo[i]);
                 }
                 int beta;
-                beta = okpath.back();
-                if(beta==160)
-                    cout<< "debug point\n";
-                okpath.pop_back();
-                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
+                processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
+                beta = myokpath.back();
+                myokpath.pop_back();
+                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,myokpath,allokpath);
+//                cout << "kkk\n";
+                for (int i = 0; i < pointInfo.size(); i++) {
+                    processed.erase(pointInfo[i]);
+                }
+                processed.erase(beta);
+                myprocessed = processed;
 /*
                 for (set<int>::const_iterator beta = next.begin(); beta != next.end(); beta++) {
                     if (iterCount==0)
