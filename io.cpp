@@ -22,7 +22,7 @@ typedef struct
     int cnt;
 }RECORD_QUEUE_S;
 
-static char g_result[MAX_LINE_LEN] = "NA";
+char g_result[MAX_LINE_LEN] = "NA";
 
 INLINE void write_file(const bool cover, const char * const buff, const char * const filename);
 
@@ -47,8 +47,6 @@ void print_time(const char *head)
     static unsigned long s = rawtime.time;
     int out_ms = rawtime.millitm - ms;
     unsigned long out_s = rawtime.time - s;
-    ms = rawtime.millitm;
-    s = rawtime.time;
 
     if (out_ms < 0)
     {
@@ -56,6 +54,25 @@ void print_time(const char *head)
         out_s -= 1;
     }
     printf("%s date/time is: %s \tused time is %lu s %d ms.\n", head, asctime(timeinfo), out_s, out_ms); 
+}
+
+unsigned long get_miltime()
+{
+    struct timeb rawtime;
+    struct tm * timeinfo;
+    ftime(&rawtime);
+
+    static int ms = rawtime.millitm;
+    static unsigned long s = rawtime.time;
+    int out_ms = rawtime.millitm - ms;
+    unsigned long out_s = rawtime.time - s;
+
+    if (out_ms < 0)
+    {
+        out_ms += 1000;
+        out_s -= 1;
+    }
+    return out_ms+out_s*1000;
 }
 
 int read_file(char ** const buff, const unsigned int spec, const char * const filename)
