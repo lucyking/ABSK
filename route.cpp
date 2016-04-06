@@ -114,7 +114,7 @@ void KKK(
         vector<int> okpath,
         set<vector<int>> &allokpath);
 
-vector<set<Path>> LocateNode(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
+vector<set<Path>> LocateVecPath(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
     vector<set<Path>> sum;
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
 //        cout <<"[XXXX]\n";
@@ -128,6 +128,22 @@ vector<set<Path>> LocateNode(int node,set<int> &dest,const FullPath  &fullPath,c
     return sum;
 }
 
+set<Path> LocateSetPath(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
+    set<Path> sum;
+    for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
+//        cout <<"[XXXX]\n";
+//        printf("[%d,%d]\n",(iter->first).first,(iter->first).second );
+//        cout<< (iter->first).first << (iter->first).second << endl;
+        if ( node == (iter->first).first && !processed.count((iter->first).second)){
+            dest.insert((iter->first).second);
+            set<Path> tmp = iter->second;
+            for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter){
+                sum.insert(*set_path_iter);
+            }
+        }
+    }
+    return sum;
+}
 //--------------------------------------------------------------------------------------------------------赛题入口
 void search_route(char *graphStream[5000], int edge_num, char *conditionsStream) {
     Graph graph;
@@ -286,6 +302,7 @@ void PrintFullDict(const FullPath &fullPath,const Conditions &conditions) {
                         cout << "[XXX] Vs occur in normal node\n";
                 }
             }
+            cout << "\t\t\t\t\t\t\t\t\t" << sp->first;
             cout << endl;
 
         }
@@ -528,14 +545,15 @@ void KKK(int node,
     int myiterCount = iterCount -1;
 
     // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
-    vector<set<Path>> vector_set_Path = LocateNode(node, next, fullPath,myprocessed);
+//    vector<set<Path>> vector_set_Path = LocateVecPath(node, next, fullPath,myprocessed);
+    set<Path> setPath = LocateSetPath(node, next, fullPath,myprocessed);
 
     tmp.push_back(node);
     vector<int> key = getKeyVector(tmp,conditions);
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
-//    cout << LocateNode(0,next,fullPath).size() << endl;
+//    cout << LocateVecPath(0,next,fullPath).size() << endl;
 //    cout << next.size()<<endl;
 
 //    if (next.size() == 10) {
@@ -555,10 +573,10 @@ void KKK(int node,
         return;
     }
 //    processed.insert(node);
-    for (vector<set<Path>>::const_iterator SetPathIter = vector_set_Path.begin();SetPathIter != vector_set_Path.end(); ++SetPathIter) {
-        set<Path> setPath = *SetPathIter;
-        myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
-        myokpath = okpath;
+//    for (set<Path>::const_iterator SetPathIter = set_Path.begin();SetPathIter != set_Path.end(); ++SetPathIter) {
+//        set<Path> setPath = *SetPathIter;
+//        myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
+//        myokpath = okpath;
         for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
             myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
             myokpath = okpath;
@@ -583,6 +601,7 @@ void KKK(int node,
 
             if (flag == false)
                 continue;
+//                break;
             else {
                 for (int i = 0; i < pointInfo.size(); i++) {
                     myprocessed.insert(pointInfo[i]);
@@ -620,7 +639,8 @@ void KKK(int node,
 //    cout << "the fullPath's size:\n";
 //    cout << fullPath.size() << endl;
     }
-}
+//}
+
 
 void SK66(
         int node,
