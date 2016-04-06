@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -75,6 +76,7 @@ void PrintConditions(int, int, const Conditions &);  //向控制台输出约束�
 void PrintShortestPathDict(const ShortestPathDict &);  //向控制台输出最短路径字典中的信息
 void PrintFullDict(const FullPath &,const Conditions &);
 void PrintSetVectorInt(const set<vector<int>> &,const set<int> &);
+void PrintVecInt(const set<int> &);
 //--------------------------------------------------------------------------------------------------------算法函数
 vector<int> getKeyVector(const vector<int> &okpath,const Conditions &conditions){
     vector<int> result;
@@ -162,7 +164,8 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
         Dijkstra(graph, edgeInfoDict, *iter, pathDict, fullDict, conditions,without);
     }
     PrintFullDict(fullDict, conditions);
-    conditions.erase(source); // insert the src node
+//    exit(0);
+    conditions.erase(source); // not point to src
 //    conditions.erase(dest); // dst should not act as src node
 //    return;
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
@@ -238,6 +241,13 @@ void ReadConditionsData(char *conditionsStream, int &source, int &dest, Conditio
 }
 
 //---pr fx-----------------------------------------------------------------------------------------------------测试函数实现
+void PrintVecInt(const vector<int> &okpath){
+    for(vector<int>::const_iterator iter = okpath.begin();iter!=okpath.end();++iter){
+        cout << *iter << "|";
+    }
+    cout << endl;
+}
+
 void PrintSetVectorInt(const set<vector<int>> &allokpath,const set<int> &conditions){
     for (set<vector<int>>::const_iterator SetIter = allokpath.begin();SetIter != allokpath.end(); ++SetIter) {
         vector<int> v= *SetIter;
@@ -534,7 +544,10 @@ void KKK(int node,
         myokpath.push_back(node);
         allokpath.insert(myokpath);
 //        PrintSetVectorInt(allokpath,conditions);
-//        cout << "\nSIZE->" << allokpath.size()<<endl;
+        cout << "\nSIZE->" << allokpath.size()<<endl;
+        PrintVecInt(key);
+        PrintVecInt(okpath);
+        exit(0);
         return;
     }
     if (iterCount < 0) {
