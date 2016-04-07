@@ -2,10 +2,11 @@
 #include "lib/lib_io.h"
 #include "lib/lib_time.h"
 #include <stdio.h>
-
+char *re;
 int main(int argc, char *argv[])
 {
     print_time("Begin");
+    get_miltime();
     char *topo[5000];
     int edge_num;
     char *demand;
@@ -27,10 +28,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    re = argv[3];
     search_route(topo, edge_num, demand);
-
     char *result_file = argv[3];
-    write_result(result_file);
+//    write_result(result_file);
     release_buff(topo, edge_num);
     release_buff(&demand, 1);
 

@@ -87,6 +87,7 @@ void PrintVecIntToFile(const vector<int> &v,const char*);
 void PrintNA(char*);
 void PrintVecInt_Condition(const vector<int> &, const set<int> &);
 void PrintSetPath(const set<Path> &,const set<int> &);
+void ViewSetPath(const set<Path> &PathSet, const set<int> &conditions);
 //--------------------------------------------------------------------------------------------------------算法函数
 vector<int> getKeyVector(const vector<int> &okpath,const Conditions &conditions){
     vector<int> result;
@@ -134,6 +135,17 @@ void KKK(
         set<int>,
         Path okpath,
         set<Path> &allokpath);
+void APK(
+        int node,
+        int src,
+        int dest,
+        const Conditions &,
+        AdvancedPathDict &,
+        FullPath &,
+        int ,
+        set<int>,
+        Path okpath,
+        set<Path> &allokpath);
 
 vector<set<Path> > LocateVecPath(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
     vector<set<Path> > sum;
@@ -156,10 +168,15 @@ set<Path> LocateSetPath(int node,set<int> &dest,const FullPath  &fullPath,const 
 //        printf("[%d,%d]\n",(iter->first).first,(iter->first).second );
 //        cout<< (iter->first).first << (iter->first).second << endl;
         if ( node == (iter->first).first && !processed.count((iter->first).second)){
+            int cout = 0;
             dest.insert((iter->first).second);
             set<Path> tmp = iter->second;
             for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter){
                 sum.insert(*set_path_iter);
+                ++cout;
+                if(cout>3) {
+                    break;
+                }
             }
         }
     }
@@ -320,7 +337,7 @@ void PrintSetPath(const set<Path> &PathSet, const set<int> &conditions){
     else {
         for (set<Path>::const_iterator iter_Path = PathSet.begin(); iter_Path != PathSet.end(); ++iter_Path) {
             const Path tmp = *iter_Path;
-//        cout << tmp.first<<endl;
+        cout << "Cost:" <<tmp.first<<endl;
 //        PrintVecInt_Condition(tmp.second.first,conditions);
 //        PrintVecInt(tmp.second.second);
             PrintVecIntToFile(tmp.second.second, re);
@@ -329,6 +346,14 @@ void PrintSetPath(const set<Path> &PathSet, const set<int> &conditions){
     }
 }
 
+void ViewSetPath(const set<Path> &PathSet, const set<int> &conditions){
+    for (set<Path>::const_iterator iter_Path = PathSet.begin(); iter_Path != PathSet.end(); ++iter_Path) {
+        const Path tmp = *iter_Path;
+        cout << "Cost:" <<tmp.first<<endl;
+        PrintVecInt_Condition(tmp.second.first,conditions);
+        PrintVecInt(tmp.second.second);
+    }
+}
 void PrintVecInt(const vector<int> &v){
     int i;
     for (i=0;i<v.size()-1;++i) {
@@ -666,16 +691,18 @@ void KKK(int node,
 //        if(allokpath.size()==1000) {
         if(get_miltime()>=9500){
             if(allokpath.size()>0) {
+//                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
-            exit(0);
+            exit(90);
         }
         return;
     }
     if(get_miltime()>=9500){
+//        ViewSetPath(setPath,conditions);
         if(allokpath.size()==0) {
             PrintNA(re);
-            exit(0);
+            exit(91);
         }
     }
     /*
