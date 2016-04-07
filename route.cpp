@@ -168,15 +168,11 @@ set<Path> LocateSetPath(int node,set<int> &dest,const FullPath  &fullPath,const 
 //        printf("[%d,%d]\n",(iter->first).first,(iter->first).second );
 //        cout<< (iter->first).first << (iter->first).second << endl;
         if ( node == (iter->first).first && !processed.count((iter->first).second)){
-            int cout = 0;
             dest.insert((iter->first).second);
             set<Path> tmp = iter->second;
             for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter){
                 sum.insert(*set_path_iter);
-                ++cout;
-                if(cout>3) {
-                    break;
-                }
+                break;
             }
         }
     }
@@ -656,31 +652,27 @@ void KKK(int node,
          Path okpath,
          set<Path> &allokpath) {
 
-//    set<int> processed;
-//    processed.insert(node);
     processed.erase(node);
 
     set<int> next;
     set<int> myprocessed = processed;
-    Path myokpath =okpath;
-    vector<int> tmp=okpath.second.first;
-    int myiterCount = iterCount -1;
+    Path myokpath = okpath;
+    vector<int> tmp = okpath.second.first;
+    int myiterCount = iterCount - 1;
 
     // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
 //    vector<set<Path>> vector_set_Path = LocateVecPath(node, next, fullPath,myprocessed);
-    set<Path> setPath = LocateSetPath(node, next, fullPath,myprocessed);
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed);
 
     tmp.push_back(node);
-    vector<int> key = getKeyVector(tmp,conditions);
+    vector<int> key = getKeyVector(tmp, conditions);
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
 //    cout << LocateVecPath(0,next,fullPath).size() << endl;
 //    cout << next.size()<<endl;
 
-//    if (next.size() == 10) {
     if (key.size() == conditions.size()) {
-//        cout<<iterCount<<endl;
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
 //        PrintSetVectorInt(allokpath,conditions);
@@ -689,8 +681,8 @@ void KKK(int node,
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
-        if(get_miltime()>=9500){
-            if(allokpath.size()>0) {
+        if (get_miltime() >= 9500) {
+            if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
@@ -698,92 +690,53 @@ void KKK(int node,
         }
         return;
     }
-    if(get_miltime()>=9500){
+
+    if (get_miltime() >= 9500) {
 //        ViewSetPath(setPath,conditions);
-        if(allokpath.size()==0) {
+        if (allokpath.size() == 0) {
             PrintNA(re);
             exit(91);
         }
     }
-    /*
-    if (iterCount < 0) {
-        cout<<"iC<0 "<<key.size();
-        return;
-    }
-    */
-//    processed.insert(node);
-//    for (set<Path>::const_iterator SetPathIter = set_Path.begin();SetPathIter != set_Path.end(); ++SetPathIter) {
-//        set<Path> setPath = *SetPathIter;
-//        myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
-//        myokpath = okpath;
-        for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
-            myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
-            myokpath = okpath;
-            const vector<int> &pointInfo = (*PathIter).second.first;
-            const vector<int> &edgeInfo = (*PathIter).second.second;
-//            cout << ">>>"<< pointInfo.size() <<endl;
-            bool flag = true;
-            /*
-//            if(node==1&& conditions.count(pointInfo[pointInfo.size()-1])) {
-            if(node==1&& pointInfo[pointInfo.size()-1]==33) {
-                myprocessed.clear();
-                okpath.clear();
-//                cout << "[1,33]\n";
+
+    for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
+        myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
+        myokpath = okpath;
+        const vector<int> &pointInfo = (*PathIter).second.first;
+        const vector<int> &edgeInfo = (*PathIter).second.second;
+        bool flag = true;
+        for (int i = 0; i < pointInfo.size(); i++) {
+            if (myprocessed.count(pointInfo[i])) {
+                flag = false;
+                break;
             }
-             */
+        }
+
+        if (flag == false)
+            continue;
+        else {
             for (int i = 0; i < pointInfo.size(); i++) {
-                if (myprocessed.count(pointInfo[i])) {
-                    flag = false;
-                    break;
-                }
-//                cout << pointInfo[i] << "|" ;
+                myprocessed.insert(pointInfo[i]);
             }
+            myokpath.first += (*PathIter).first;
+            myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
+            myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
 
-            if (flag == false)
-                continue;
-//                break;
-            else {
-                for (int i = 0; i < pointInfo.size(); i++) {
-                    myprocessed.insert(pointInfo[i]);
-//                    myokpath.push_back(pointInfo[i]);
-                }
-                myokpath.first += (*PathIter).first;
-                myokpath.second.first.insert(myokpath.second.first.end(),pointInfo.begin(),pointInfo.end());
-                myokpath.second.second.insert(myokpath.second.second.end(),edgeInfo.begin(),edgeInfo.end());
-
-                int beta;
-                processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
-                beta = myokpath.second.first.back();
-                myokpath.second.first.pop_back();
-                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,myokpath,allokpath);
-//                cout << "kkk\n";
-                for (int i = 0; i < pointInfo.size(); i++) {
-                    processed.erase(pointInfo[i]);
-                }
-                processed.erase(beta);
-//                myprocessed = processed;
-/*
-                for (set<int>::const_iterator beta = next.begin(); beta != next.end(); beta++) {
-                    if (iterCount==0)
-                        break;
-                    if (*beta == node || myprocessed.count(*beta))
-                        continue;
-                    if(iterCount<=0)
-                        break;
-                    KKK(*beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
-                }
-*/
- //                    cout << iterCount;
-//            cout << endl;
-
+            int beta;
+            processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
+            beta = myokpath.second.first.back();
+            myokpath.second.first.pop_back();
+            KKK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath);
+            for (int i = 0; i < pointInfo.size(); i++) {
+                processed.erase(pointInfo[i]);
             }
+            processed.erase(beta);
 
         }
 
-//    cout << "the fullPath's size:\n";
-//    cout << fullPath.size() << endl;
     }
-//}
+
+}
 
 void VECTK(int node,
          int src,
