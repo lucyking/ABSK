@@ -16,6 +16,7 @@ using namespace std;
 
 extern char *re;
 int TouchEndCount =0;
+int asi = 0;
 //typedef
 typedef std::pair<int, int> Edge;           // <start,dest>
 typedef std::pair<int, int> EdgeInfo;       // <index,weight>
@@ -164,7 +165,7 @@ void ASK(
         int ,
         set<int>,
         Path okpath,
-        set<Path> &allokpath,bool &iterFlag);
+        set<Path> &allokpath,bool &iterFlag,int asi);
 
 vector<set<Path> > LocateVecPath(int node,vector<int> &nest,const FullPath  &fullPath,const set<int> &processed){
     vector<set<Path> > sum;
@@ -247,7 +248,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     //XF
 //    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
     bool iterFlag = true;
-    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag); //MMM
+    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag,1); //MMM
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
      * PrintSetVectorInt(allokpath.second.first,conditions);
@@ -724,7 +725,7 @@ void KKK(int node,
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
-        if (get_miltime() >= 9500) {
+        if (get_miltime() >= 9800) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
@@ -734,7 +735,7 @@ void KKK(int node,
         return;
     }
 
-    if (get_miltime() >= 9500) {
+    if (get_miltime() >= 9800) {
 //        ViewSetPath(setPath,conditions);
         if (allokpath.size() == 0) {
             PrintNA(re);
@@ -790,7 +791,7 @@ void ASK(int node,
          int iterCount,
          set<int> processed,
          Path okpath,
-         set<Path> &allokpath,bool &iterFlag) {
+         set<Path> &allokpath,bool &iterFlag,int asi) {
 
     if(iterFlag == false)
         return;
@@ -814,18 +815,24 @@ void ASK(int node,
     if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
         myprocessed.erase(dest);
     }
-    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1);
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,asi);
 
     //AFM
 //    printf("[%d]\n",node);
 //    SeeSetPath(setPath,conditions);
-    if(next.size()==0){
-        ++TouchEndCount;
-        if(TouchEndCount>conditions.size()){
-            iterFlag = false;
-            TouchEndCount = 0;
-        }
+
+    if (get_miltime()<3000) {
+        if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
+            ++asi;
+//            iterFlag = true;
+//            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
+            ++TouchEndCount;
+            if (TouchEndCount > conditions.size()) {
+                iterFlag = false;
+                TouchEndCount = 0;
+            }
 //        return;
+        }
     }
 
 
@@ -845,7 +852,8 @@ void ASK(int node,
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
-        if (get_miltime() >= 4500) {
+
+        if (get_miltime() >= 3000) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
@@ -855,7 +863,7 @@ void ASK(int node,
         return;
     }
 
-    if (get_miltime() >= 4500) {
+    if (get_miltime() >= 3000) {
         if (allokpath.size() == 0) {
             KKK(node,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
 //            PrintNA(re);
@@ -899,7 +907,7 @@ void ASK(int node,
             processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
             beta = myokpath.second.first.back();
             myokpath.second.first.pop_back();
-            ASK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath,iterFlag);
+            ASK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath,iterFlag,asi);
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
