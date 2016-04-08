@@ -73,6 +73,23 @@ typedef struct Candidate {                      // Dijkstra算法中的候选人
 
 } Candidate;
 
+/*--------My Fx----------*/
+set<int> VecToSet(const vector<int> &v){
+    set<int> s;
+    for (int k = 0; k < v.size(); ++k) {
+        s.insert(v[k]);
+    }
+    return s;
+}
+
+bool VectNotinSet(const vector<int> &v, const set<int> &s){
+    for(int i=0;i<v.size();++i){
+       if(s.count(v[i]))
+           return false;
+    }
+    return true;
+}
+
 //--------------------------------------------------------------------------------------------------------数据输入模块函数
 int ReadANumberFromStr(char *, int &);                          // 从字符流中读取一个数字
 void ReadGraphData(char **, Graph &, EdgeInfoDict &);           // 读取图信息
@@ -89,6 +106,7 @@ void PrintNA(char*);
 void PrintVecInt_Condition(const vector<int> &, const set<int> &);
 void PrintSetPath(const set<Path> &,const set<int> &);
 void ViewSetPath(const set<Path> &PathSet, const set<int> &conditions);
+void SeeSetPath(const set<Path> &v, const set<int> &conditions);
 //--------------------------------------------------------------------------------------------------------算法函数
 vector<int> getKeyVector(const vector<int> &okpath,const Conditions &conditions){
     vector<int> result;
@@ -148,21 +166,21 @@ void ASK(
         Path okpath,
         set<Path> &allokpath,bool &iterFlag);
 
-vector<set<Path> > LocateVecPath(int node,set<int> &dest,const FullPath  &fullPath,const set<int> &processed){
+vector<set<Path> > LocateVecPath(int node,vector<int> &nest,const FullPath  &fullPath,const set<int> &processed){
     vector<set<Path> > sum;
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
 //        cout <<"[XXXX]\n";
 //        printf("[%d,%d]\n",(iter->first).first,(iter->first).second );
 //        cout<< (iter->first).first << (iter->first).second << endl;
         if ( node == (iter->first).first && !processed.count((iter->first).second)){
-            dest.insert((iter->first).second);
+            nest.push_back((iter->first).second);
             sum.push_back(iter->second);
         }
     }
     return sum;
 }
 
-set<Path> LocateSetPath(int node,set<int> &nest,const FullPath  &fullPath,const set<int> &processed,const int &topNUm){
+set<Path> LocateSetPath(int node,vector<int> &nest,const FullPath  &fullPath,const set<int> &processed,const int &topNUm){
     set<Path> sum;
     int i=0;
     for (FullPath::const_iterator iter = fullPath.begin(); iter != fullPath.end(); ++iter) {
@@ -171,12 +189,14 @@ set<Path> LocateSetPath(int node,set<int> &nest,const FullPath  &fullPath,const 
 //        cout<< (iter->first).first << (iter->first).second << endl;
         if ( node == (iter->first).first && !processed.count((iter->first).second)){
             ++i;
-            nest.insert((iter->first).second);
+            nest.push_back((iter->first).second);
             set<Path> tmp = iter->second;
-            for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter){
-                sum.insert(*set_path_iter);
-                if(i>=topNUm)
-                    break;
+            for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
+                if (VectNotinSet((set_path_iter->second).first, processed)) {
+                    sum.insert(*set_path_iter);
+                    if (i >= topNUm)
+                        break;
+                }
             }
         }
     }
@@ -224,9 +244,10 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    conditions.erase(dest); // dst should not act as src node
 //    return;
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
-//    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
-    bool iterFlag = true;
-    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag); //MMM
+    //XF
+    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
+//    bool iterFlag = true;
+//    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag); //MMM
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
      * PrintSetVectorInt(allokpath.second.first,conditions);
@@ -354,6 +375,18 @@ void ViewSetPath(const set<Path> &PathSet, const set<int> &conditions){
         const Path tmp = *iter_Path;
         PrintVecInt_Condition(tmp.second.first,conditions);
 //        PrintVecInt(tmp.second.second);
+    }
+}
+void SeeSetPath(const set<Path> &v, const set<int> &conditions){
+    for (set<Path>::const_iterator sp = v.begin(); sp != v.end(); ++sp) {
+        const Path &path = *sp;
+        const vector<int> &pathOfPoint = path.second.first;
+        const vector<int> &pathOfEdge = path.second.second;
+        for (std::vector<int>::const_iterator vp = pathOfPoint.begin(); vp != pathOfPoint.end(); ++vp) {
+            cout << (*vp) << "|";
+        }
+        cout << "\t" << sp->first<<endl;
+
     }
 }
 void PrintVecInt(const vector<int> &v){
@@ -660,18 +693,22 @@ void KKK(int node,
 
     processed.erase(node);
 
-    set<int> next;
+    vector<int> next;
     set<int> myprocessed = processed;
     Path myokpath = okpath;
-    vector<int> tmp = okpath.second.first;
     int myiterCount = iterCount - 1;
 
-    // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
-//    vector<set<Path>> vector_set_Path = LocateVecPath(node, next, fullPath,myprocessed);
-    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1);
-
+    vector<int> tmp = okpath.second.first;
     tmp.push_back(node);
     vector<int> key = getKeyVector(tmp, conditions);
+    // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
+//    vector<set<Path>> vector_set_Path = LocateVecPath(node, next, fullPath,myprocessed);
+    myprocessed.insert(dest);
+    if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
+        myprocessed.erase(dest);
+    }
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1);
+
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
@@ -682,7 +719,7 @@ void KKK(int node,
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
 //        PrintSetVectorInt(allokpath,conditions);
-//        cout << "\nSIZE->" << allokpath.size()<<endl;
+        cout << "\nRe->" << allokpath.size()<<endl;
 //        PrintVecInt(key);
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
@@ -759,31 +796,39 @@ void ASK(int node,
         return;
     processed.erase(node);
 
-    set<int> next;
+    vector<int> next;
     set<int> myprocessed = processed;
     Path myokpath = okpath;
-    vector<int> tmp = okpath.second.first;
     int myiterCount = iterCount - 1;
+
+    vector<int> tmp = okpath.second.first;
+    tmp.push_back(node);
+    vector<int> key = getKeyVector(tmp, conditions);
 
 
 
     // [node,node] is not exist ,though myprocessed pop_back node ,it's still right
 //    vector<set<Path>> vector_set_Path = LocateVecPath(node, next, fullPath,myprocessed);
 //    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,conditions.size()-myprocessed.size());
+    myprocessed.insert(dest);
+    if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
+        myprocessed.erase(dest);
+    }
     set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1);
-//    ViewSetPath(setPath,conditions);
+
+    //AFM
+//    printf("[%d]\n",node);
+//    SeeSetPath(setPath,conditions);
     if(next.size()==0){
         ++TouchEndCount;
-        if(TouchEndCount>100){
+        if(TouchEndCount>500){
             iterFlag = false;
             TouchEndCount = 0;
         }
-//        return;
+        return;
     }
 
 
-    tmp.push_back(node);
-    vector<int> key = getKeyVector(tmp, conditions);
 
 //    cout << next.size()<<endl;
 //    cout << "the 0's size:\n";
@@ -793,6 +838,7 @@ void ASK(int node,
     if (key.size() == conditions.size()) {
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
+        printf("Cost>[%d]\n",okpath.first);
 //        PrintSetVectorInt(allokpath,conditions);
 //        cout << "\nSIZE->" << allokpath.size()<<endl;
 //        PrintVecInt(key);
@@ -825,6 +871,7 @@ void ASK(int node,
         bool flag = true;
         for (int i = 0; i < pointInfo.size(); i++) {
             if (myprocessed.count(pointInfo[i])) {
+//                cout<<pointInfo[i];
                 flag = false;
                 break;
             }
@@ -855,7 +902,7 @@ void ASK(int node,
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
-            processed.erase(beta);
+            processed.erase(beta);//AFE
             if(node==src){
                 iterFlag = true;
             }
@@ -884,7 +931,7 @@ void VECTK(int node,
 //    processed.insert(node);
     processed.erase(node);
 
-    set<int> next;
+    vector<int> next;
     set<int> myprocessed = processed;
     Path myokpath =okpath;
     vector<int> tmp=okpath.second.first;
