@@ -62,10 +62,10 @@ unsigned long get_miltime()
     struct tm * timeinfo;
     ftime(&rawtime);
 
-//    static int ms = rawtime.millitm;
-//    static unsigned long s = rawtime.time;
-    int ms = rawtime.millitm;
-    unsigned long s = rawtime.time;
+    static int ms = rawtime.millitm;
+    static unsigned long s = rawtime.time;
+//    int ms = rawtime.millitm;
+//    unsigned long s = rawtime.time;
     int out_ms = rawtime.millitm - ms;
     unsigned long out_s = rawtime.time - s;
 

@@ -192,11 +192,11 @@ set<Path> LocateSetPath(int node,vector<int> &nest,const FullPath  &fullPath,con
             nest.push_back((iter->first).second);
             set<Path> tmp = iter->second;
             for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
-                if (VectNotinSet((set_path_iter->second).first, processed)) {
+//                if (VectNotinSet((set_path_iter->second).first, processed)) {
                     sum.insert(*set_path_iter);
                     if (i >= topNUm)
                         break;
-                }
+//                }
             }
         }
     }
@@ -238,16 +238,16 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
             continue;
         Dijkstra(graph, edgeInfoDict, *iter, pathDict, fullDict, conditions,without);
     }
-    PrintFullDict(fullDict, conditions);
+//    PrintFullDict(fullDict, conditions);
 //    exit(0);
     conditions.erase(source); // not point to src
 //    conditions.erase(dest); // dst should not act as src node
 //    return;
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
     //XF
-    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
-//    bool iterFlag = true;
-//    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag); //MMM
+//    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
+    bool iterFlag = true;
+    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag); //MMM
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
      * PrintSetVectorInt(allokpath.second.first,conditions);
@@ -707,7 +707,7 @@ void KKK(int node,
     if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
         myprocessed.erase(dest);
     }
-    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1);
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,100);
 
 
 //    cout << next.size()<<endl;
@@ -719,7 +719,7 @@ void KKK(int node,
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
 //        PrintSetVectorInt(allokpath,conditions);
-        cout << "\nRe->" << allokpath.size()<<endl;
+//        cout << "\nRe->" << allokpath.size()<<endl;
 //        PrintVecInt(key);
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
@@ -821,11 +821,11 @@ void ASK(int node,
 //    SeeSetPath(setPath,conditions);
     if(next.size()==0){
         ++TouchEndCount;
-        if(TouchEndCount>500){
+        if(TouchEndCount>conditions.size()){
             iterFlag = false;
             TouchEndCount = 0;
         }
-        return;
+//        return;
     }
 
 
@@ -838,14 +838,14 @@ void ASK(int node,
     if (key.size() == conditions.size()) {
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
-        printf("Cost>[%d]\n",okpath.first);
+//        printf("Cost>[%d]\n",okpath.first);
 //        PrintSetVectorInt(allokpath,conditions);
 //        cout << "\nSIZE->" << allokpath.size()<<endl;
 //        PrintVecInt(key);
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
-        if (get_miltime() >= 9500) {
+        if (get_miltime() >= 4500) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
@@ -855,10 +855,11 @@ void ASK(int node,
         return;
     }
 
-    if (get_miltime() >= 9500) {
+    if (get_miltime() >= 4500) {
         if (allokpath.size() == 0) {
-            PrintNA(re);
-            exit(91);
+            KKK(node,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
+//            PrintNA(re);
+//            exit(91);
         }
     }
 
@@ -888,7 +889,7 @@ void ASK(int node,
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
             if(node==src){
-                cout << "src-start>>" <<myokpath.second.first.back()<<endl;
+//                cout << "src-start>>" <<myokpath.second.first.back()<<endl;
                 if(myokpath.second.first.back()==15){
                     cout << "here is 15" << endl;
                 }
