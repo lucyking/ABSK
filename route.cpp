@@ -708,7 +708,7 @@ void KKK(int node,
     if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
         myprocessed.erase(dest);
     }
-    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,100);
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1000);
 
 
 //    cout << next.size()<<endl;
@@ -821,13 +821,14 @@ void ASK(int node,
 //    printf("[%d]\n",node);
 //    SeeSetPath(setPath,conditions);
 
-    if (get_miltime()<9500) {
+    if (get_miltime()<4500) {
         if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
             ++asi;
 //            iterFlag = true;
 //            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
             ++TouchEndCount;
-            if (TouchEndCount > conditions.size()) {
+//            if (TouchEndCount > conditions.size()) {
+            if (TouchEndCount > 1) {
                 iterFlag = false;
                 TouchEndCount = 0;
             }
@@ -853,7 +854,7 @@ void ASK(int node,
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
 
-        if (get_miltime() >= 9500) {
+        if (get_miltime() >= 4500) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
@@ -863,9 +864,9 @@ void ASK(int node,
         return;
     }
 
-    if (get_miltime() >= 9500) {
+    if (get_miltime() >= 4500) {
         if (allokpath.size() == 0) {
-            KKK(node,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
+            KKK(src,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
 //            PrintNA(re);
 //            exit(91);
         }
