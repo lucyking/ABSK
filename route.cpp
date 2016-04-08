@@ -821,7 +821,7 @@ void ASK(int node,
 //    printf("[%d]\n",node);
 //    SeeSetPath(setPath,conditions);
 
-    if (get_miltime()<3000) {
+    if (get_miltime()<9500) {
         if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
             ++asi;
 //            iterFlag = true;
@@ -853,7 +853,7 @@ void ASK(int node,
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
 
-        if (get_miltime() >= 3000) {
+        if (get_miltime() >= 9500) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
@@ -863,7 +863,7 @@ void ASK(int node,
         return;
     }
 
-    if (get_miltime() >= 3000) {
+    if (get_miltime() >= 9500) {
         if (allokpath.size() == 0) {
             KKK(node,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
 //            PrintNA(re);
