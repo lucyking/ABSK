@@ -333,7 +333,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     }
     else if(conditions.size()<40){
         bool iterFlag = true;
-        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,5); //MMM
+        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,8); //MMM
     }
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
