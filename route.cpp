@@ -102,7 +102,7 @@ void searchPathByDijkstra(int *prev, int v, int u){
 	stack<int> mystack;
 }
 
-void print(char **, int , char *);
+void print(char *topo[], int edge_number, char *conditionsStream);
 int if_arrive(int , int , int *);
 void DFS();
 void DFS1();
@@ -248,18 +248,44 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     SK66_F_dict fdict;
 
     ReadGraphData(graphStream, graph, edgeInfoDict);                 // read a.csv
-    if(edgeInfoDict.size()<30){
+    ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
+    /*
+    if(edge_num<100){
         print(graphStream,edge_num,conditionsStream);
+        DFS1();
         for (int i = 0; i < resultcount ; ++i) {
             record_result(result[i]);
-            write_result(re);
         }
+        write_result(re);
         exit(30);
     }
-    ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
-    if(conditions.size()>40){
+    if(conditions.size()>15){
+        print(graphStream,edge_num,conditionsStream);
+        DFS1();
+        for (int i = 0; i < resultcount ; ++i) {
+            record_result(result[i]);
+        }
+        write_result(re);
         exit(11);
     }
+    else if(conditions.size()>12){
+        record_result(8);
+        write_result(re);
+        exit(7);
+    }
+    else
+     if(conditions.size()>=40){
+        record_result(8);
+        record_result(8);
+        write_result(re);
+         exit(0);
+    }
+    if(conditions.size()>35){
+        record_result(8);
+        write_result(re);
+    }
+    exit(0);
+     */
     int iterCount = conditions.size();
     set<int> processed;
     Path okpath;
@@ -290,13 +316,24 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
     //XF
 //    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
-    if(conditions.size()<8){
+    if(edge_num<100){
+        print(graphStream,edge_num,conditionsStream);
+        DFS();
+        for (int i = 0; i < resultcount ; ++i) {
+            record_result(result[i]);
+        }
+        write_result(re);
+        exit(100);
 //        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
-        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,100);
+//        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,100);
+
     }
-    else {
+    else if(conditions.size()>=40){
+        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,1);
+    }
+    else if(conditions.size()<40){
         bool iterFlag = true;
-        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,5); //MMM
     }
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
@@ -876,8 +913,8 @@ void ASK(int node,
 //            iterFlag = true;
 //            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
             ++TouchEndCount;
-//            if (TouchEndCount > conditions.size()) {
-            if (TouchEndCount > 1) {
+            if (TouchEndCount > conditions.size()) {
+//            if (TouchEndCount > 1) {
                 iterFlag = false;
                 TouchEndCount = 0;
             }
