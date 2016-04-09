@@ -11,12 +11,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include <bits/errno.h>
+//#include <bits/stl_stack.h>
+#include <stack>
+
+#define MAXN 600
 
 using namespace std;
+
+int N_CITY_COUNT; //城市数量
+int G[MAXN][MAXN];//权值
+int Adj_G[MAXN][10];//邻接表
+int E[MAXN][MAXN];
+int startcity;
+int endcity;
+int mustv[200];//必须经过的节点
+int mustvnum;//必须经过的节点的数量
+int vflag[MAXN];//0表示节点属于v-v'，1表示节点属于v'
+int result[MAXN];
+int resultcount;
+int path[MAXN];
+int mostv = 0;//树上最多多少v'点
+
+const int maxnum = 100;
+const int maxint = 10000;
 
 extern char *re;
 int TouchEndCount =0;
 int asi = 0;
+bool jumpFlag = true;
+
 //typedef
 typedef std::pair<int, int> Edge;           // <start,dest>
 typedef std::pair<int, int> EdgeInfo;       // <index,weight>
@@ -75,6 +98,15 @@ typedef struct Candidate {                      // Dijkstra算法中的候选人
 } Candidate;
 
 /*--------My Fx----------*/
+void searchPathByDijkstra(int *prev, int v, int u){
+	stack<int> mystack;
+}
+
+void print(char **, int , char *);
+int if_arrive(int , int , int *);
+void DFS();
+void DFS1();
+
 set<int> VecToSet(const vector<int> &v){
     set<int> s;
     for (int k = 0; k < v.size(); ++k) {
@@ -216,7 +248,18 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     SK66_F_dict fdict;
 
     ReadGraphData(graphStream, graph, edgeInfoDict);                 // read a.csv
+    if(edgeInfoDict.size()<30){
+        print(graphStream,edge_num,conditionsStream);
+        for (int i = 0; i < resultcount ; ++i) {
+            record_result(result[i]);
+            write_result(re);
+        }
+        exit(30);
+    }
     ReadConditionsData(conditionsStream, source, dest, conditions);  // read b.csv
+    if(conditions.size()>40){
+        exit(11);
+    }
     int iterCount = conditions.size();
     set<int> processed;
     Path okpath;
@@ -833,8 +876,8 @@ void ASK(int node,
 //            iterFlag = true;
 //            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
             ++TouchEndCount;
-            if (TouchEndCount > conditions.size()) {
-//            if (TouchEndCount > 2) {
+//            if (TouchEndCount > conditions.size()) {
+            if (TouchEndCount > 1) {
                 iterFlag = false;
                 TouchEndCount = 0;
             }
@@ -922,7 +965,7 @@ void ASK(int node,
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
-            processed.erase(beta);//AFE
+            processed.erase(beta);//AF END
             if(node==src){
                 iterFlag = true;
             }
@@ -1179,3 +1222,557 @@ void SK66(
 //        fdict[key] = minCostPath;
 
 }
+
+
+
+
+
+void print(char *topo[5000], int edge_num, char *demand){
+	char *temp[1];
+	int i;
+	int k;
+	int j;
+	char *ptr[5];
+	int v1;
+	int v2;//邻接矩阵行列
+	int cost;//花费
+	int edge;//边
+	int vnum = 0;//顶点数
+	char tempstart[5] = { 0 };
+	char tempend[5] = { 0 };
+	char tempdemand[5] = { 0 };
+	//printf("%d\n", edge_num);
+	//初始化图,本节点到本节点也设置为-1，不可到达
+	for (i = 0; i < MAXN; ++i)//顶点数最多为边的2倍
+	{
+		for (k = 0; k < MAXN; ++k)
+		{
+			G[i][k] = -1;
+			E[i][k] = -1;
+		}
+
+	}
+
+	for (i = 0; i < MAXN; ++i)//顶点数最多为边的2倍
+	{
+		Adj_G[i][0] = 0;
+	}
+
+	for (i = 0; i<edge_num; ++i)
+	{
+		ptr[0] = strtok(topo[i], ",");
+		for (k = 0; k < 4; ++k)
+		{
+			ptr[k + 1] = strtok(NULL, ",");
+		}
+
+		edge = atoi(ptr[0]);
+		v1 = atoi(ptr[1]);
+		v2 = atoi(ptr[2]);
+		cost = atoi(ptr[3]);
+
+		if (vnum<v1)
+			vnum = v1;
+		if (vnum<v2)
+			vnum = v2;//统计节点数
+
+		Adj_G[v1][0] = Adj_G[v1][0] + 1;
+		int adj = Adj_G[v1][0];//统计与v1相邻的点的个数
+		Adj_G[v1][adj] = v2;
+
+		if (((G[v1][v2] != -1) && (G[v1][v2]>cost)) || (G[v1][v2] == -1))
+		{
+			G[v1][v2] = cost;//保存图的索引
+			E[v1][v2] = edge;//保存边的索引
+		}
+
+		vflag[i] = 0;//先置所有边为v-v'
+	}
+
+	N_CITY_COUNT = vnum + 1;
+	i = 0;
+	k = 0;
+	while (demand[i] != ',') {
+		tempstart[k] = demand[i];
+		++k;
+		++i;
+	}
+	tempstart[k] = '\0';
+	++i;
+	k = 0;
+	while (demand[i] != ',') {
+		tempend[k] = demand[i];
+		++k;
+		++i;
+	}
+	tempend[k] = '\0';
+	++i;
+
+	j = 0;
+	mustvnum = 0;
+	while (demand[i])
+	{
+		k = 0;
+		while (demand[i] != '|'&& demand[i])
+		{
+			tempdemand[k] = demand[i];
+			++i;
+			++k;
+		}
+		tempdemand[k] = '\0';
+		mustv[j] = atoi(tempdemand);
+		vflag[mustv[j]] = 1;
+		++mustvnum;
+		++i;
+		++j;
+	}
+	startcity = atoi(tempstart);
+	endcity = atoi(tempend);
+	//printf("节点数%d\n", N_CITY_COUNT);
+}
+
+
+
+
+int if_arrive(int top, int count, int path[])
+{
+	int j;
+	int v;
+	int ifarrive = 0;
+	//int lock = 0;
+	stack<int> mystack;
+	if (top != endcity)
+		mystack.push(top);
+	int visited[MAXN];
+	mostv = 0;
+	memset(visited, 0, 4 * MAXN);
+	for (int i = 0; i < count; ++i)
+	{
+		visited[path[i]] = 1;
+	}
+	while (!mystack.empty())
+	{
+		//lock = 1;
+		v = mystack.top();
+		for (j = 1; j <= Adj_G[v][0]; ++j)
+		{
+			int select = Adj_G[v][j];
+			if (visited[select] != 1)
+			{
+				mystack.push(select);
+				if (vflag[select] == 1)
+					mostv++;
+				if (select == endcity)//遇到了目的节点应该直接跳出，不能继续向后搜索
+				{
+					ifarrive = 1;
+				}
+				visited[select] = 1;
+				break;
+			}
+		}
+		//只要从一条路径到达了目的节点则为可到达目的节点
+		if (j == Adj_G[v][0] + 1)
+		{
+			mystack.pop();
+		}
+
+		/*if (lock == 0 && ifarrive == 0)
+		{
+		//printf("a");
+		mostv = 0;
+		lock = 1;
+		}*/
+	}
+	return ifarrive;
+}
+
+
+
+
+void DFS()
+{
+	int find = 0;
+	int visitededge[8 * MAXN];
+	memset(visitededge, 0, 4 * 8 * MAXN);
+	int i;
+	int v;
+	int instack[MAXN];//1表示在堆栈里的节点不可访问，visitededge取消的时候可能把路径里的节点也取消了
+	memset(instack, 0, MAXN);
+	int length = 0;
+	int countmustv = 0;//经过的v'数
+	int count = 0;//经过的节点数
+	int minlength = 10000;//初始给很大的值
+	int arrive;
+	stack<int> mystack;
+	mystack.push(startcity);
+	path[0] = startcity;
+	instack[startcity] = 1;
+	count++;//已经经过的点
+	while (!mystack.empty())
+	{
+		v = mystack.top();
+		for (i = 0; i < N_CITY_COUNT; ++i)
+		{
+			if (G[v][i] != -1 && !visitededge[E[v][i]] && !instack[i])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
+			{
+				visitededge[E[v][i]] = 1;
+				path[count] = i;
+				count++;
+				if (vflag[i] == 1)
+					countmustv++;
+				mystack.push(i);
+				//printf("c%d %d ", count, G[path[count - 2]][path[count - 1]]);
+				length += G[path[count - 2]][path[count - 1]];
+				instack[i] = 1;
+				if (length >= minlength)
+				{
+
+					//printf(" *%d* ", length);
+					length = length - G[path[count - 2]][path[count - 1]];
+					if (vflag[i] == 1)
+						countmustv--;
+					instack[i] = 0;//后面该节点还是有可能访问到的
+					mystack.pop();
+					count--;
+					//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+					//修改栈顶和i
+					v = mystack.top();
+					i = -1;
+				}
+				if ((N_CITY_COUNT - count)<(mustvnum - countmustv))
+				{
+					//printf(" *%d* ", length);
+					length = length - G[path[count - 2]][path[count - 1]];
+					if (vflag[path[count - 1]] == 1)//前一次也许已经弹出i点了
+						countmustv--;
+					instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
+					mystack.pop();
+					count--;
+					//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+					//修改栈顶和i
+					v = mystack.top();
+					i = -1;
+				}
+				if (count > N_CITY_COUNT / 10)
+				{
+					arrive = if_arrive(path[count - 1], count, path);
+					if ((path[count - 1] != endcity&&arrive == 0) || ((path[count - 1] != endcity) && ((mostv + countmustv) < mustvnum)))
+					{
+						length = length - G[path[count - 2]][path[count - 1]];
+						if (vflag[path[count - 1]] == 1)
+							countmustv--;
+						instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
+						mystack.pop();
+						count--;
+						//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+						//修改栈顶和i
+						v = mystack.top();
+						i = -1;
+					}
+				}
+				break;
+			}
+		}
+		if (i == endcity || i == N_CITY_COUNT)
+		{
+
+			if (countmustv == mustvnum && i == endcity)
+			{
+				//printf("find");
+				if (minlength > length)
+				{
+					minlength = length;
+					resultcount = 0;
+					for (int i = 0; i < count - 1; ++i)
+					{
+						result[i] = E[path[i]][path[i + 1]];
+						resultcount++;
+					}
+				}
+				//	cout << minlength<<endl;
+				//	if (N_CITY_COUNT > 25)
+				//		find++;
+				//	if (find == 2)
+				//		break;
+			}
+
+			for (int i = 0; i < N_CITY_COUNT; ++i)
+			{
+				if (G[mystack.top()][i] != -1)
+					visitededge[E[mystack.top()][i]] = 0;
+			}
+			if (vflag[mystack.top()] == 1)
+				countmustv--;
+			instack[mystack.top()] = 0;
+			mystack.pop();
+			G[path[count - 2]][count - 1];
+			if (count >= 2)
+				length = length - G[path[count - 2]][path[count - 1]];
+			count--;
+		}
+	}
+}
+
+
+void DFS1()
+{
+	srand((int)time(0));
+	int visitededge[8 * MAXN];
+	memset(visitededge, 0, 4 * 8 * MAXN);
+	int i;
+	int v;
+	int instack[MAXN];//1表示在堆栈里的节点不可访问，visitededge取消的时候可能把路径里的节点也取消了
+	memset(instack, 0, 4 * MAXN);
+	int length = 0;
+	int countmustv = 0;//经过的v'数
+	int count = 0;//经过的节点数
+	int minlength = 10000;//初始给很大的值
+	int arrive;
+	stack<int> mystack;
+	mystack.push(startcity);
+	path[0] = startcity;
+	instack[startcity] = 1;
+	count++;//已经经过的点的数量
+	int no_allowed_node = 0;//1表示无可选节点
+	int searchcount = 0;
+	int select = -1;
+	while (searchcount<5100)
+	{
+		//if( (clock()-start)>900)
+		//	return;
+		int t = 0;
+		no_allowed_node = 0;//1表示无可选节点
+		v = mystack.top();
+		if (mustvnum > countmustv)
+		{
+			instack[endcity] = 1;
+		}
+		else
+		{
+			instack[endcity] = 0;
+		}
+		for (i = 1; i <= Adj_G[v][0]; ++i)//G[v][0]存放在与v相邻的节点的个数
+		{
+			if (!visitededge[E[v][Adj_G[v][i]]] && !instack[Adj_G[v][i]])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
+				++t;//可以有t个点可选
+		}
+		if (t == 0)
+			no_allowed_node = 1;
+
+		if (no_allowed_node == 0)
+		{
+			int select_index = rand() % t + 1;//选择第select个，从1开始
+			t = 0;
+			for (i = 1; i <= Adj_G[v][0]; ++i)
+			{
+				if (!visitededge[E[v][Adj_G[v][i]]] && !instack[Adj_G[v][i]])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
+				{
+					++t;//可以有t个点可选
+					if (vflag[Adj_G[v][i]] == 1)
+						break;
+					if (t == select_index)
+						break;
+				}
+			}
+			select = Adj_G[v][i];
+			visitededge[E[v][select]] = 1;
+			path[count] = Adj_G[v][i];
+			++count;
+			if (vflag[select] == 1)
+				++countmustv;
+			mystack.push(select);
+			length += G[path[count - 2]][path[count - 1]];
+			instack[select] = 1;
+			if (length >= minlength)
+			{
+				length = length - G[path[count - 2]][path[count - 1]];
+				if (vflag[select] == 1)
+					--countmustv;
+				instack[select] = 0;//后面该节点还是有可能访问到的
+				mystack.pop();
+				--count;
+				//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+				//修改栈顶和i
+				v = mystack.top();
+				select = -1;
+			}
+
+			if ((N_CITY_COUNT - count) < (mustvnum - countmustv))
+			{
+				length = length - G[path[count - 2]][path[count - 1]];
+				if (vflag[path[count - 1]] == 1)//前一次也许已经弹出i点了
+					--countmustv;
+				instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
+				mystack.pop();
+				--count;
+				//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+				//修改栈顶和i
+				v = mystack.top();
+				select = -1;
+			}
+			else
+			{
+				arrive = if_arrive(path[count - 1], count, path);
+				if ((path[count - 1] != endcity&&arrive == 0) || ((path[count - 1] != endcity) && ((mostv + countmustv) < mustvnum)))
+				{
+
+					length = length - G[path[count - 2]][path[count - 1]];
+					if (vflag[path[count - 1]] == 1)
+						--countmustv;
+					instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
+					mystack.pop();
+					--count;
+					//弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
+					//修改栈顶和i
+					v = mystack.top();
+					select = -1;
+				}
+			}
+		}
+		///////////////////////////如果节点已经经过了所有比较点,直接dijkstra算法////////////////////////////
+
+		if (countmustv == mustvnum)
+		{
+			instack[endcity] = 0;
+			int s[MAXN];    // 判断是否已存入该点到S集合中 1表示存入
+			int dist[MAXN];
+			int prev[MAXN];
+			int n = N_CITY_COUNT;
+			int v = path[count - 1];//起点就是路径最后一个结点
+			for (int i = 0; i<n; ++i)
+				dist[i] = maxint;
+			for (int i = 0; i<n; ++i)
+			{
+				if (G[v][i] != -1 && !instack[i])//这样路径上已有的点不会参与后面计算的
+					dist[i] = G[v][i];
+				s[i] = 0;     // 初始都未用过该点
+				if (dist[i] == maxint)
+					prev[i] = -1;//无前驱节点
+				else
+					prev[i] = v;
+			}
+			dist[v] = 0;
+			s[v] = 1;
+			// 依次将未放入S集合的结点中，取dist[]最小值的结点，放入结合S中
+			// 一旦S包含了所有V中顶点，dist就记录了从源点到所有其他顶点之间的最短路径长度
+			for (int i = 1; i<n; ++i)
+			{
+				int tmp = maxint;
+				int u = v;
+				//找出当前未使用的点j的dist[j]最小值
+				for (int j = 0; j<n; ++j)
+				{
+					if ((!s[j]) && dist[j]<tmp && !instack[j])
+					{
+						u = j;              // u保存当前邻接点中距离最小的点的号码
+						tmp = dist[j];
+					}
+				}
+				s[u] = 1;    // 表示u点已存入S集合中
+
+							 // 更新dist
+				for (int j = 1; j <= Adj_G[u][0]; ++j)
+					if ((!s[Adj_G[u][j]]) && G[u][Adj_G[u][j]] != -1 && !instack[Adj_G[u][j]])
+					{
+						int newdist = dist[u] + G[u][Adj_G[u][j]];
+						if (newdist < dist[Adj_G[u][j]])
+						{
+							dist[Adj_G[u][j]] = newdist;
+							prev[Adj_G[u][j]] = u;
+						}
+					}
+			}
+			if (dist[endcity] != maxint)
+			{
+				int que[MAXN];
+				int tot = 0;
+				que[tot] = endcity;//u为终点
+				++tot;
+				length += dist[endcity];
+				int tmp = prev[endcity];
+				while (tmp != v)
+				{
+					que[tot] = tmp;
+					++tot;
+					tmp = prev[tmp];
+				}
+				que[tot] = v;
+
+				for (int i = tot - 1; i >= 0; --i)
+				{
+					path[count] = que[i];
+					++count;
+				}
+				if (length < minlength)
+				{
+					minlength = length;
+					resultcount = 0;
+					for (int i = 0; i < count - 1; ++i)
+					{
+						result[i] = E[path[i]][path[i + 1]];
+						++resultcount;
+					}
+				}
+			}
+			//printf("a");
+			memset(instack, 0, 4 * MAXN);
+			memset(visitededge, 0, 4 * 8 * MAXN);
+			int stacksize = mystack.size();
+			for (int i = 0; i < stacksize; ++i)
+				mystack.pop();
+			length = 0;
+			countmustv = 0;//经过的v'数
+			count = 0;//经过的节点数
+			++searchcount;
+			mystack.push(startcity);
+			path[0] = startcity;
+			++count;
+			instack[startcity] = 1;
+			//cout << minlength<<endl;
+		}
+
+		////////////////////////////////////////////////////////////////////////
+
+		else
+		{
+
+			if (select == endcity || no_allowed_node == 1)
+			{
+				if (countmustv == mustvnum && select == endcity)
+				{
+					select = -1;
+					if (minlength > length)
+					{
+						minlength = length;
+						resultcount = 0;
+						for (int i = 0; i < count - 1; ++i)
+						{
+							result[i] = E[path[i]][path[i + 1]];
+							++resultcount;
+						}
+					}
+				}
+				++searchcount;
+				memset(instack, 0, 4 * MAXN);
+				memset(visitededge, 0, 4 * 8 * MAXN);
+				int stacksize = mystack.size();
+				for (int i = 0; i < stacksize; ++i)
+					mystack.pop();
+				length = 0;
+				countmustv = 0;//经过的v'数
+				count = 0;//经过的节点数
+				mystack.push(startcity);
+				path[0] = startcity;
+				instack[startcity] = 1;
+				++count;//已经经过的点的数量
+			}
+		}
+
+	}
+}
+
+
+
+
+
+
