@@ -34,7 +34,7 @@ typedef std::pair<
 typedef map<
         pair<int,int>,
         set<Path>
-        > FullPath;
+> FullPath;
 
 typedef map<pair<int,int>,set<pair<int,vector<int> > > > AdvancedPathDict;
 
@@ -85,8 +85,8 @@ set<int> VecToSet(const vector<int> &v){
 
 bool VectNotinSet(const vector<int> &v, const set<int> &s){
     for(int i=0;i<v.size();++i){
-       if(s.count(v[i]))
-           return false;
+        if(s.count(v[i]))
+            return false;
     }
     return true;
 }
@@ -154,7 +154,7 @@ void KKK(
         int ,
         set<int>,
         Path okpath,
-        set<Path> &allokpath);
+        set<Path> &allokpath,int asi);
 void ASK(
         int node,
         int src,
@@ -194,9 +194,9 @@ set<Path> LocateSetPath(int node,vector<int> &nest,const FullPath  &fullPath,con
             set<Path> tmp = iter->second;
             for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
 //                if (VectNotinSet((set_path_iter->second).first, processed)) {
-                    sum.insert(*set_path_iter);
-                    if (i >= topNUm)
-                        break;
+                sum.insert(*set_path_iter);
+                if (i >= topNUm)
+                    break;
 //                }
             }
         }
@@ -247,8 +247,14 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
     //XF
 //    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
-    bool iterFlag = true;
-    ASK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,iterFlag,1); //MMM
+    if(conditions.size()<8){
+//        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,100);
+    }
+    else {
+        bool iterFlag = true;
+        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+    }
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
      * PrintSetVectorInt(allokpath.second.first,conditions);
@@ -362,7 +368,7 @@ void PrintSetPath(const set<Path> &PathSet, const set<int> &conditions){
     else {
         for (set<Path>::const_iterator iter_Path = PathSet.begin(); iter_Path != PathSet.end(); ++iter_Path) {
             const Path tmp = *iter_Path;
-        cout << "Cost:" <<tmp.first<<endl;
+            cout << "Cost:" <<tmp.first<<endl;
 //        PrintVecInt_Condition(tmp.second.first,conditions);
 //        PrintVecInt(tmp.second.second);
             PrintVecIntToFile(tmp.second.second, re);
@@ -428,10 +434,10 @@ void PrintSetVectorInt(const set<vector<int> > &allokpath,const set<int> &condit
         vector<int> c;
         c.clear();
         for (int i=0;i<v.size();++i) {
-                cout << v[i] <<"|";
+            cout << v[i] <<"|";
             if(conditions.count(v[i]))
                 c.push_back(v[i]);
-            }
+        }
         cout << "\n[";
         for (int i=0;i<c.size();i++)
             cout << c[i] << ",";
@@ -690,7 +696,7 @@ void KKK(int node,
          int iterCount,
          set<int> processed,
          Path okpath,
-         set<Path> &allokpath) {
+         set<Path> &allokpath,int asi) {
 
     processed.erase(node);
 
@@ -708,7 +714,7 @@ void KKK(int node,
     if( (key.size()-conditions.size()) == -1 ) {   // not select dest until it's the last one
         myprocessed.erase(dest);
     }
-    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,1000);
+    set<Path> setPath = LocateSetPath(node, next, fullPath, myprocessed,asi);
 
 
 //    cout << next.size()<<endl;
@@ -730,7 +736,7 @@ void KKK(int node,
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
-            exit(90);
+            exit(11);
         }
         return;
     }
@@ -739,7 +745,7 @@ void KKK(int node,
 //        ViewSetPath(setPath,conditions);
         if (allokpath.size() == 0) {
             PrintNA(re);
-            exit(91);
+            exit(111);
         }
     }
 
@@ -770,7 +776,7 @@ void KKK(int node,
             processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
             beta = myokpath.second.first.back();
             myokpath.second.first.pop_back();
-            KKK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath);
+            KKK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath,asi);
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
@@ -821,14 +827,14 @@ void ASK(int node,
 //    printf("[%d]\n",node);
 //    SeeSetPath(setPath,conditions);
 
-    if (get_miltime()<4500) {
+    if (get_miltime()<1000) {
         if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
-            ++asi;
+//            ++asi;
 //            iterFlag = true;
 //            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
             ++TouchEndCount;
-//            if (TouchEndCount > conditions.size()) {
-            if (TouchEndCount > 1) {
+            if (TouchEndCount > conditions.size()) {
+//            if (TouchEndCount > 2) {
                 iterFlag = false;
                 TouchEndCount = 0;
             }
@@ -854,19 +860,23 @@ void ASK(int node,
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
 
-        if (get_miltime() >= 4500) {
+        if (get_miltime() >= 1000) {
             if (allokpath.size() > 0) {
 //                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
-            exit(90);
+            exit(10);
         }
         return;
     }
 
-    if (get_miltime() >= 4500) {
+    if (get_miltime() >= 1000) {
         if (allokpath.size() == 0) {
-            KKK(src,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath);
+            processed.clear();
+            iterCount = conditions.size();
+            Path tmp;
+            okpath = tmp;
+            KKK(src,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath,1);
 //            PrintNA(re);
 //            exit(91);
         }
@@ -897,12 +907,12 @@ void ASK(int node,
             myokpath.first += (*PathIter).first;
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
-            if(node==src){
+//            if(node==src){
 //                cout << "src-start>>" <<myokpath.second.first.back()<<endl;
-                if(myokpath.second.first.back()==15){
-                    cout << "here is 15" << endl;
-                }
-            }
+//                if(myokpath.second.first.back()==15){
+//                    cout << "here is 15" << endl;
+//                }
+//            }
 
             int beta;
             processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
@@ -927,15 +937,15 @@ void ASK(int node,
 }
 
 void VECTK(int node,
-         int src,
-         int dest,
-         const Conditions &conditions,
-         AdvancedPathDict &pathDict,
-         FullPath &fullPath,
-         int iterCount,
-         set<int> processed,
-         Path okpath,
-         set<Path> &allokpath) {
+           int src,
+           int dest,
+           const Conditions &conditions,
+           AdvancedPathDict &pathDict,
+           FullPath &fullPath,
+           int iterCount,
+           set<int> processed,
+           Path okpath,
+           set<Path> &allokpath) {
 
 //    set<int> processed;
 //    processed.insert(node);
@@ -1016,7 +1026,7 @@ void VECTK(int node,
                 processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
                 beta = myokpath.second.first.back();
                 myokpath.second.first.pop_back();
-                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,myokpath,allokpath);
+                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,myokpath,allokpath,1);
 //                cout << "kkk\n";
                 for (int i = 0; i < pointInfo.size(); i++) {
                     processed.erase(pointInfo[i]);
@@ -1085,48 +1095,48 @@ void SK66(
         }
     } else {
      */
-        // 当迭代次数大于0的时候
-        /*
-        std::pair<std::pair<int, int>, int> key; // < <起始点，终止点>,迭代次数>
-        key.first = std::pair<int, int>(node, dest); // first
-        key.second = iterCount;   // second
+    // 当迭代次数大于0的时候
+    /*
+    std::pair<std::pair<int, int>, int> key; // < <起始点，终止点>,迭代次数>
+    key.first = std::pair<int, int>(node, dest); // first
+    key.second = iterCount;   // second
 
-        Path minCostPath;
-        minCostPath.first = 0x7fffffff;
-        */
+    Path minCostPath;
+    minCostPath.first = 0x7fffffff;
+    */
 
-            //for (Conditions::const_iterator iter2 = conditions.begin(); iter2 != conditions.end(); ++iter2) {
+    //for (Conditions::const_iterator iter2 = conditions.begin(); iter2 != conditions.end(); ++iter2) {
 
-               // if (*iter == *iter2)
-                 //   continue;        // not via this node itself
+    // if (*iter == *iter2)
+    //   continue;        // not via this node itself
 
-                // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
-              //  std::pair<int, int> leftHalfPathToBeSolve(*iter, *iter2);
+    // 计算D(v_i, v_l)  ====>  {v(i) , v(i+1)}
+    //  std::pair<int, int> leftHalfPathToBeSolve(*iter, *iter2);
 //            if (!pathDict.count(leftHalfPathToBeSolve)) {
-                //if (!fullDict.count(leftHalfPathToBeSolve)) {
-               // }
+    //if (!fullDict.count(leftHalfPathToBeSolve)) {
+    // }
 //            if (!pathDict.count(leftHalfPathToBeSolve)) {
-                //if (!fullDict.count(leftHalfPathToBeSolve)) {
+    //if (!fullDict.count(leftHalfPathToBeSolve)) {
 //                    Path leftHalfPath;
 //                    leftHalfPath.first = 0xffffff;
 //                    ddict[leftHalfPathToBeSolve] = leftHalfPath;
 //                } else {
 //                ShortestPathDict::const_iterator PPath = pathDict.find(leftHalfPathToBeSolve);
 //                    set<Path> PPath = fullDict[leftHalfPathToBeSolve];  // this right
-                    //Path leftHalfPath = PPath[pair<int,int>(0,0)];                       // this wrong
-                    //ddict[leftHalfPathToBeSolve] = leftHalfPath;
+    //Path leftHalfPath = PPath[pair<int,int>(0,0)];                       // this wrong
+    //ddict[leftHalfPathToBeSolve] = leftHalfPath;
 //                }
-                // 计算F(v_l, v_l+1)
-                /*
-                Graph::const_iterator pSourceAdjs = graph.find(*iter);
-                if (pSourceAdjs != graph.end()) {
-                    const std::set<int> &sourceAdjs = pSourceAdjs->second;
-                    for (std::set<int>::const_iterator iter_sub = sourceAdjs.begin(); iter_sub != sourceAdjs.end(); ++iter_sub) {
-                if (!fullDict.count(rightHalfPathToBeSolve)) {
-                    SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict,
-                         fullDict);
-                }
-                 */
+    // 计算F(v_l, v_l+1)
+    /*
+    Graph::const_iterator pSourceAdjs = graph.find(*iter);
+    if (pSourceAdjs != graph.end()) {
+        const std::set<int> &sourceAdjs = pSourceAdjs->second;
+        for (std::set<int>::const_iterator iter_sub = sourceAdjs.begin(); iter_sub != sourceAdjs.end(); ++iter_sub) {
+    if (!fullDict.count(rightHalfPathToBeSolve)) {
+        SK66(*iter, source, dest, iterCount - 1, graph, edgeInfoDict, conditions, ddict, fdict, pathDict,
+             fullDict);
+    }
+     */
 
 
 
@@ -1162,7 +1172,7 @@ void SK66(
             }
             */
 
-            //}
+    //}
 
 //        }
 
