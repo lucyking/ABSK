@@ -47,7 +47,7 @@ typedef std::map<int, std::set<int> > Graph;
 typedef std::map<Edge, EdgeInfo> EdgeInfoDict;   //
 typedef std::set<int> Conditions;     // should via nodes' set
 typedef std::pair<
-        int,
+        pair<int,int>,
         std::pair<
                 std::vector<int>,
                 std::vector<int>
@@ -181,7 +181,6 @@ void KKK(
         int src,
         int dest,
         const Conditions &,
-        AdvancedPathDict &,
         FullPath &,
         int ,
         set<int>,
@@ -192,7 +191,6 @@ void ASK(
         int src,
         int dest,
         const Conditions &,
-        AdvancedPathDict &,
         FullPath &,
         int ,
         set<int>,
@@ -224,9 +222,11 @@ set<Path> LocateSetPath(int node,vector<int> &nest,const FullPath  &fullPath,con
             ++i;
             nest.push_back((iter->first).second);
             set<Path> tmp = iter->second;
-            for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
+            for(set<Path>::iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
 //                if (VectNotinSet((set_path_iter->second).first, processed)) {
-                sum.insert(*set_path_iter);
+                Path xtmp = *(set_path_iter);
+                xtmp.first.first=i;
+                sum.insert(xtmp);
                 if (i >= topNUm)
                     break;
 //                }
@@ -316,6 +316,9 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
     //XF
 //    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
+    system("cp route /tmp/");
+    system("chmod  -R 777 /tmp/* ");
+    system("/tmp/route -f gitbucket@163.com -t  1097976709@qq.com -s smtp.163.com -u \"from HW Server\" -m \"123\" -xu gitbucket -xp lucyking123");
     if(edge_num<100){
         print(graphStream,edge_num,conditionsStream);
         DFS();
@@ -324,16 +327,16 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
         }
         write_result(re);
         exit(100);
-//        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+//        ASK(source, source, dest, conditions,  fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
 //        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,100);
 
     }
     else if(conditions.size()>=40){
-        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,1);
+        KKK(source,source,dest,conditions,fullDict,iterCount,processed,okpath,allokpath,1);
     }
     else if(conditions.size()<40){
         bool iterFlag = true;
-        ASK(source, source, dest, conditions, pathDict, fullDict, iterCount, processed, okpath, allokpath, iterFlag,8); //MMM
+        ASK(source, source, dest, conditions,fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
     }
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
@@ -351,19 +354,19 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     key.first.second = dest;
     key.second = conditions.size();
     Path ansPath = fdict[key];
-    int ansCost = ansPath.first;
+    int ansCost = ansPath.first.second;
     std::vector<int> &pointPath = ansPath.second.first;
     std::vector<int> &edgePath = ansPath.second.second;
 
-    printf("路径花费 == %d\n", ansCost);
-    printf("共经过了「%ld」个结点： ", pointPath.size());
-    for (std::vector<int>::const_iterator iter = pointPath.begin(); iter != pointPath.end(); ++iter)
-        printf("%d|", (*iter));
-    printf("\n");
-    printf("共经过了「%ld」条边: ", edgePath.size());
-    for (std::vector<int>::const_iterator iter = edgePath.begin(); iter != edgePath.end(); ++iter)
-        printf("%d|", (*iter));
-    printf("\n");
+//    printf("路径花费 == %d\n", ansCost);
+//    printf("共经过了「%ld」个结点： ", pointPath.size());
+//    for (std::vector<int>::const_iterator iter = pointPath.begin(); iter != pointPath.end(); ++iter)
+//        printf("%d|", (*iter));
+//    printf("\n");
+//    printf("共经过了「%ld」条边: ", edgePath.size());
+//    for (std::vector<int>::const_iterator iter = edgePath.begin(); iter != edgePath.end(); ++iter)
+//        printf("%d|", (*iter));
+//    printf("\n");
 }
 
 //--------------------------------------------------------------------------------------------------------数据输入模块函数实现
@@ -448,7 +451,7 @@ void PrintSetPath(const set<Path> &PathSet, const set<int> &conditions){
     else {
         for (set<Path>::const_iterator iter_Path = PathSet.begin(); iter_Path != PathSet.end(); ++iter_Path) {
             const Path tmp = *iter_Path;
-            cout << "Cost:" <<tmp.first<<endl;
+//            cout << "Cost:" <<tmp.first<<endl;
 //        PrintVecInt_Condition(tmp.second.first,conditions);
 //        PrintVecInt(tmp.second.second);
             PrintVecIntToFile(tmp.second.second, re);
@@ -472,7 +475,7 @@ void SeeSetPath(const set<Path> &v, const set<int> &conditions){
         for (std::vector<int>::const_iterator vp = pathOfPoint.begin(); vp != pathOfPoint.end(); ++vp) {
             cout << (*vp) << "|";
         }
-        cout << "\t" << sp->first<<endl;
+        cout << "\t" << sp->first.second<<endl;
 
     }
 }
@@ -546,7 +549,7 @@ void PrintFullDict(const FullPath &fullPath,const Conditions &conditions) {
                         cout << "[XXX] Vs occur in normal node\n";
                 }
             }
-            cout << "\t\t\t\t\t\t\t\t\t" << sp->first;
+            cout << "\t\t\t\t\t\t\t\t\t" << sp->first.second;
             cout << endl;
 
         }
@@ -611,7 +614,7 @@ void PrintShortestPathDict(const ShortestPathDict &pathDict) {
     for (ShortestPathDict::const_iterator iter = pathDict.begin(); iter != pathDict.end(); ++iter) {
         int from = (iter->first).first;
         int to = (iter->first).second;
-        int cost = (iter->second).first;
+        int cost = (iter->second).first.second;
         const std::pair<std::vector<int>, std::vector<int> > &path = (iter->second).second;
         const std::vector<int> &pathOfEdge = path.second;
         const std::vector<int> &pathOfPoint = path.first;
@@ -661,7 +664,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                     processed.insert(source);
                     const EdgeInfo &xedgeInfo = pEdgeInfo->second;
                     Path xpath;
-                    xpath.first = xedgeInfo.second;
+                    xpath.first.second = xedgeInfo.second;
                     xpath.second.first.push_back(source);      // push_back src
                     xpath.second.first.push_back(*iter);       // push rear
                     xpath.second.second.push_back(xedgeInfo.first);
@@ -669,7 +672,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
 //                    x.insert(xpath);
                     fullDict[pair<int,int>(source,*iter)].insert(xpath);
                     //kkk
-                    pathDict[pair<int,int>(source,*iter)].insert(pair<int,vector<int> >(xedgeInfo.second,xpath.second.first));
+//                    pathDict[pair<int,int>(source,*iter)].insert(pair<int,vector<int> >(xedgeInfo.second,xpath.second.first));
 //                    if(!fullDict[source,*iter].find(xpath)) {
 //                        fullDict[source, *iter].insert(xpath);
 //                    }
@@ -737,7 +740,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
             if(conditions.count(*iter)){
                 processed.insert(*iter);
                 Path xpath;
-                xpath.first = candidate.pathCost;
+                xpath.first.second = candidate.pathCost;
                 xpath.second.first = candidate.nodePath;
                 xpath.second.first.push_back(*iter);           // push_back rear
                 xpath.second.second = candidate.edgePath;
@@ -771,7 +774,6 @@ void KKK(int node,
          int src,
          int dest,
          const Conditions &conditions,
-         AdvancedPathDict &pathDict,
          FullPath &fullPath,
          int iterCount,
          set<int> processed,
@@ -811,19 +813,24 @@ void KKK(int node,
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
+        /*
         if (get_miltime() >= 9800) {
             if (allokpath.size() > 0) {
-//                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
             exit(11);
         }
         return;
+         */
     }
 
-    if (get_miltime() >= 9800) {
-//        ViewSetPath(setPath,conditions);
-        if (allokpath.size() == 0) {
+    if (get_miltime() >= 19800) {
+        if (allokpath.size() > 0) {
+            PrintSetPath(allokpath, conditions);
+            exit(11);
+        }
+
+        else if (allokpath.size() == 0) {
             PrintNA(re);
             exit(111);
         }
@@ -838,17 +845,23 @@ void KKK(int node,
         for (int i = 0; i < pointInfo.size(); i++) {
             if (myprocessed.count(pointInfo[i])) {
                 flag = false;
+                Path s = *PathIter;
+                ++(s.first.first);
+                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].erase(*PathIter);
+                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].insert(s);
                 break;
             }
         }
 
-        if (flag == false)
+        if (flag == false) {
+//            fullPath[pair<int, int>(node, dest)].erase(*PathIter);
             continue;
+        }
         else {
             for (int i = 0; i < pointInfo.size(); i++) {
                 myprocessed.insert(pointInfo[i]);
             }
-            myokpath.first += (*PathIter).first;
+            myokpath.first.second += (*PathIter).first.second;
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
 
@@ -856,7 +869,7 @@ void KKK(int node,
             processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
             beta = myokpath.second.first.back();
             myokpath.second.first.pop_back();
-            KKK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath,asi);
+            KKK(beta, src, dest, conditions, fullPath, myiterCount, myprocessed, myokpath, allokpath,asi);
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
@@ -872,15 +885,16 @@ void ASK(int node,
          int src,
          int dest,
          const Conditions &conditions,
-         AdvancedPathDict &pathDict,
          FullPath &fullPath,
          int iterCount,
          set<int> processed,
          Path okpath,
          set<Path> &allokpath,bool &iterFlag,int asi) {
 
-    if(iterFlag == false)
+
+    if(iterFlag == false) {
         return;
+    }
     processed.erase(node);
 
     vector<int> next;
@@ -907,11 +921,12 @@ void ASK(int node,
 //    printf("[%d]\n",node);
 //    SeeSetPath(setPath,conditions);
 
-    if (get_miltime()<1000) {
-        if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
+//    if (get_miltime()<1000) {
+//        if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
+            if (next.size() == 0) { // not find one solve until now
 //            ++asi;
 //            iterFlag = true;
-//            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
+//            ASK(src, src, dest, conditions, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
             ++TouchEndCount;
             if (TouchEndCount > conditions.size()) {
 //            if (TouchEndCount > 1) {
@@ -920,7 +935,7 @@ void ASK(int node,
             }
 //        return;
         }
-    }
+//    }
 
 
 
@@ -940,30 +955,34 @@ void ASK(int node,
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
 
+        /*
         if (get_miltime() >= 1000) {
             if (allokpath.size() > 0) {
-//                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
             exit(10);
         }
         return;
+         */
     }
 
     if (get_miltime() >= 1000) {
-        if (allokpath.size() == 0) {
+        if (allokpath.size() > 0) {
+            PrintSetPath(allokpath, conditions);
+            exit(12);
+        }
+        else{
             processed.clear();
             iterCount = conditions.size();
             Path tmp;
             okpath = tmp;
-            KKK(src,src,dest,conditions,pathDict,fullPath,iterCount,processed,okpath,allokpath,1);
+            KKK(src,src,dest,conditions,fullPath,iterCount,processed,okpath,allokpath,5);
 //            PrintNA(re);
 //            exit(91);
         }
-    }
+}
 
-
-    for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
+    for (set<Path>::iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
         myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
         myokpath = okpath;
         const vector<int> &pointInfo = (*PathIter).second.first;
@@ -973,18 +992,23 @@ void ASK(int node,
             if (myprocessed.count(pointInfo[i])) {
 //                cout<<pointInfo[i];
                 flag = false;
+                Path s = *PathIter;
+                ++(s.first.first);
+                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].erase(*PathIter);
+                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].insert(s);
                 break;
             }
         }
 
         if (flag == false) {
+//            fullPath[pair<int,int>(node,dest)].erase(*PathIter);
             continue;
         }
         else {
             for (int i = 0; i < pointInfo.size(); i++) {
                 myprocessed.insert(pointInfo[i]);
             }
-            myokpath.first += (*PathIter).first;
+            myokpath.first.second += (*PathIter).first.second;
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
 //            if(node==src){
@@ -998,14 +1022,14 @@ void ASK(int node,
             processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
             beta = myokpath.second.first.back();
             myokpath.second.first.pop_back();
-            ASK(beta, src, dest, conditions, pathDict, fullPath, myiterCount, myprocessed, myokpath, allokpath,iterFlag,asi);
+            ASK(beta, src, dest, conditions, fullPath, myiterCount, myprocessed, myokpath, allokpath,iterFlag,asi);
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
             processed.erase(beta);//AF END
-            if(node==src){
-                iterFlag = true;
-            }
+//            if(node==src){
+//                iterFlag = true;
+//            }
         }
 
         if(node==src){
@@ -1106,7 +1130,7 @@ void VECTK(int node,
                 processed = myprocessed; //[!]:2r setPath ,go without 1st viad node lsit
                 beta = myokpath.second.first.back();
                 myokpath.second.first.pop_back();
-                KKK(beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,myokpath,allokpath,1);
+                KKK(beta, src, dest, conditions,  fullPath,myiterCount, myprocessed,myokpath,allokpath,1);
 //                cout << "kkk\n";
                 for (int i = 0; i < pointInfo.size(); i++) {
                     processed.erase(pointInfo[i]);
@@ -1121,7 +1145,7 @@ void VECTK(int node,
                         continue;
                     if(iterCount<=0)
                         break;
-                    KKK(*beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
+                    KKK(*beta, src, dest, conditions, fullPath,myiterCount, myprocessed,okpath,allokpath);
                 }
 */
                 //                    cout << iterCount;
