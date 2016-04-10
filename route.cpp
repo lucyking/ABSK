@@ -11,29 +11,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <bits/errno.h>
-//#include <bits/stl_stack.h>
 #include <stack>
 
-#define MAXN 600
 
 using namespace std;
 
-int N_CITY_COUNT; //城市数量
-int G[MAXN][MAXN];//权值
-int Adj_G[MAXN][10];//邻接表
-int E[MAXN][MAXN];
-int startcity;
-int endcity;
-int mustv[200];//必须经过的节点
-int mustvnum;//必须经过的节点的数量
-int vflag[MAXN];//0表示节点属于v-v'，1表示节点属于v'
-int result[MAXN];
-int resultcount;
-int path[MAXN];
-int mostv = 0;//树上最多多少v'点
+extern elem Gtable[600][600] ;
+extern bool finalal[600][600] ;
+int ks;
+bool V[600];
+int demandint[50];
+bool demandflag[50];
+bool Vchildflag[600][600];//经过为1，未经过为0,每一行表示child节点
+int Child[50];
+int passnum;
+int Vmax;
+int PathStack[600];
+//int LastS;
+//int BijingStack[50];
+int P[600];
+int D[600];
+unsigned short result[MAXVEX];//输出结果
+clockid_t TimeStart,TimeFinish;
+double TimeLong;
+int cost;
+int rc;
+int R;
 
-const int maxnum = 100;
-const int maxint = 10000;
 
 extern char *re;
 int TouchEndCount =0;
@@ -47,7 +51,7 @@ typedef std::map<int, std::set<int> > Graph;
 typedef std::map<Edge, EdgeInfo> EdgeInfoDict;   //
 typedef std::set<int> Conditions;     // should via nodes' set
 typedef std::pair<
-        pair<int,int>,
+        int,
         std::pair<
                 std::vector<int>,
                 std::vector<int>
@@ -98,15 +102,7 @@ typedef struct Candidate {                      // Dijkstra算法中的候选人
 } Candidate;
 
 /*--------My Fx----------*/
-void searchPathByDijkstra(int *prev, int v, int u){
-    stack<int> mystack;
-}
-
-void print(char *topo[], int edge_number, char *conditionsStream);
-int if_arrive(int , int , int *);
-void DFS();
-void DFS1();
-
+void DFS(char *a[],int b,char *con);
 set<int> VecToSet(const vector<int> &v){
     set<int> s;
     for (int k = 0; k < v.size(); ++k) {
@@ -170,7 +166,6 @@ void VECTK(
         int src,
         int dest,
         const Conditions &,
-        AdvancedPathDict &,
         FullPath &,
         int ,
         set<int>,
@@ -181,6 +176,7 @@ void KKK(
         int src,
         int dest,
         const Conditions &,
+        AdvancedPathDict &,
         FullPath &,
         int ,
         set<int>,
@@ -222,11 +218,9 @@ set<Path> LocateSetPath(int node,vector<int> &nest,const FullPath  &fullPath,con
             ++i;
             nest.push_back((iter->first).second);
             set<Path> tmp = iter->second;
-            for(set<Path>::iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
+            for(set<Path>::const_iterator set_path_iter = tmp.begin();set_path_iter!=tmp.end();++set_path_iter) {
 //                if (VectNotinSet((set_path_iter->second).first, processed)) {
-                Path xtmp = *(set_path_iter);
-                xtmp.first.first=i;
-                sum.insert(xtmp);
+                sum.insert(*set_path_iter);
                 if (i >= topNUm)
                     break;
 //                }
@@ -316,27 +310,29 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
 //    processed.insert(0);   // <--  0|129|220|...|  start with 0
     //XF
 //    KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath);
-    system("cp route /tmp/");
-    system("chmod  -R 777 /tmp/* ");
-    system("/tmp/route -f gitbucket@163.com -t  1097976709@qq.com -s smtp.163.com -u \"from HW Server\" -m \"123\" -xu gitbucket -xp lucyking123");
-    if(edge_num<100){
-        print(graphStream,edge_num,conditionsStream);
-        DFS();
-        for (int i = 0; i < resultcount ; ++i) {
-            record_result(result[i]);
-        }
+//    system("cp route /tmp/");
+//    system("chmod  -R 777 /tmp/* ");
+//    system("/tmp/route -f gitbucket@163.com -t  1097976709@qq.com -s smtp.163.com -u \"from HW Server\" -m \"123\" -xu gitbucket -xp lucyking123");
+    /*
+    if(edge_num<100) {
+        DFS(graphStream,edge_num,conditionsStream);
         write_result(re);
         exit(100);
 //        ASK(source, source, dest, conditions,  fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
 //        KKK(source,source,dest,conditions,pathDict,fullDict,iterCount,processed,okpath,allokpath,100);
 
     }
-    else if(conditions.size()>=40){
-        KKK(source,source,dest,conditions,fullDict,iterCount,processed,okpath,allokpath,1);
+     */
+    if(edgeInfoDict.size()<100 or conditions.size()>40){
+        DFS(graphStream,edge_num,conditionsStream);
+        write_result(re);
+        exit(100);
+//        ASK(source, source, dest, conditions,  fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+//        KKK(source,source,dest,conditions,fullDict,iterCount,processed,okpath,allokpath,1);
     }
-    else if(conditions.size()<40){
+    else {
         bool iterFlag = true;
-        ASK(source, source, dest, conditions,fullDict, iterCount, processed, okpath, allokpath, iterFlag,10); //MMM
+        ASK(source, source, dest, conditions,fullDict, iterCount, processed, okpath, allokpath, iterFlag,conditions.size()/4); //MMM
     }
 //    cout << "the ok path size>>>" <<allokpath.size() << endl;
     /*
@@ -354,7 +350,7 @@ void search_route(char *graphStream[5000], int edge_num, char *conditionsStream)
     key.first.second = dest;
     key.second = conditions.size();
     Path ansPath = fdict[key];
-    int ansCost = ansPath.first.second;
+    int ansCost = ansPath.first;
     std::vector<int> &pointPath = ansPath.second.first;
     std::vector<int> &edgePath = ansPath.second.second;
 
@@ -451,7 +447,7 @@ void PrintSetPath(const set<Path> &PathSet, const set<int> &conditions){
     else {
         for (set<Path>::const_iterator iter_Path = PathSet.begin(); iter_Path != PathSet.end(); ++iter_Path) {
             const Path tmp = *iter_Path;
-//            cout << "Cost:" <<tmp.first<<endl;
+            cout << "Cost:" <<tmp.first<<endl;
 //        PrintVecInt_Condition(tmp.second.first,conditions);
 //        PrintVecInt(tmp.second.second);
             PrintVecIntToFile(tmp.second.second, re);
@@ -475,7 +471,7 @@ void SeeSetPath(const set<Path> &v, const set<int> &conditions){
         for (std::vector<int>::const_iterator vp = pathOfPoint.begin(); vp != pathOfPoint.end(); ++vp) {
             cout << (*vp) << "|";
         }
-        cout << "\t" << sp->first.second<<endl;
+        cout << "\t" << sp->first<<endl;
 
     }
 }
@@ -549,7 +545,7 @@ void PrintFullDict(const FullPath &fullPath,const Conditions &conditions) {
                         cout << "[XXX] Vs occur in normal node\n";
                 }
             }
-            cout << "\t\t\t\t\t\t\t\t\t" << sp->first.second;
+            cout << "\t\t\t\t\t\t\t\t\t" << sp->first;
             cout << endl;
 
         }
@@ -614,7 +610,7 @@ void PrintShortestPathDict(const ShortestPathDict &pathDict) {
     for (ShortestPathDict::const_iterator iter = pathDict.begin(); iter != pathDict.end(); ++iter) {
         int from = (iter->first).first;
         int to = (iter->first).second;
-        int cost = (iter->second).first.second;
+        int cost = (iter->second).first;
         const std::pair<std::vector<int>, std::vector<int> > &path = (iter->second).second;
         const std::vector<int> &pathOfEdge = path.second;
         const std::vector<int> &pathOfPoint = path.first;
@@ -664,7 +660,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
                     processed.insert(source);
                     const EdgeInfo &xedgeInfo = pEdgeInfo->second;
                     Path xpath;
-                    xpath.first.second = xedgeInfo.second;
+                    xpath.first = xedgeInfo.second;
                     xpath.second.first.push_back(source);      // push_back src
                     xpath.second.first.push_back(*iter);       // push rear
                     xpath.second.second.push_back(xedgeInfo.first);
@@ -672,7 +668,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
 //                    x.insert(xpath);
                     fullDict[pair<int,int>(source,*iter)].insert(xpath);
                     //kkk
-//                    pathDict[pair<int,int>(source,*iter)].insert(pair<int,vector<int> >(xedgeInfo.second,xpath.second.first));
+                    pathDict[pair<int,int>(source,*iter)].insert(pair<int,vector<int> >(xedgeInfo.second,xpath.second.first));
 //                    if(!fullDict[source,*iter].find(xpath)) {
 //                        fullDict[source, *iter].insert(xpath);
 //                    }
@@ -740,7 +736,7 @@ void Dijkstra(const Graph &graph, const EdgeInfoDict &edgeInfoDict, int source, 
             if(conditions.count(*iter)){
                 processed.insert(*iter);
                 Path xpath;
-                xpath.first.second = candidate.pathCost;
+                xpath.first = candidate.pathCost;
                 xpath.second.first = candidate.nodePath;
                 xpath.second.first.push_back(*iter);           // push_back rear
                 xpath.second.second = candidate.edgePath;
@@ -813,23 +809,15 @@ void KKK(int node,
 //        PrintVecInt(myokpath.second.first);
 //        PrintVecInt(myokpath.second.second);
 //        if(allokpath.size()==1000) {
-        /*
-        if (get_miltime() >= 9800) {
-            if (allokpath.size() > 0) {
-                PrintSetPath(allokpath, conditions);
-            }
-            exit(11);
-        }
         return;
-         */
     }
 
-    if (get_miltime() >= 19800) {
+    if (get_miltime() >= 18000) {
+//        ViewSetPath(setPath,conditions);
         if (allokpath.size() > 0) {
             PrintSetPath(allokpath, conditions);
             exit(11);
         }
-
         else if (allokpath.size() == 0) {
             PrintNA(re);
             exit(111);
@@ -845,23 +833,17 @@ void KKK(int node,
         for (int i = 0; i < pointInfo.size(); i++) {
             if (myprocessed.count(pointInfo[i])) {
                 flag = false;
-                Path s = *PathIter;
-                ++(s.first.first);
-                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].erase(*PathIter);
-                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].insert(s);
                 break;
             }
         }
 
-        if (flag == false) {
-//            fullPath[pair<int, int>(node, dest)].erase(*PathIter);
+        if (flag == false)
             continue;
-        }
         else {
             for (int i = 0; i < pointInfo.size(); i++) {
                 myprocessed.insert(pointInfo[i]);
             }
-            myokpath.first.second += (*PathIter).first.second;
+            myokpath.first += (*PathIter).first;
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
 
@@ -891,10 +873,8 @@ void ASK(int node,
          Path okpath,
          set<Path> &allokpath,bool &iterFlag,int asi) {
 
-
-    if(iterFlag == false) {
+    if(iterFlag == false)
         return;
-    }
     processed.erase(node);
 
     vector<int> next;
@@ -922,19 +902,18 @@ void ASK(int node,
 //    SeeSetPath(setPath,conditions);
 
 //    if (get_miltime()<1000) {
-//        if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
-    if (next.size() == 0) { // not find one solve until now
+        if (next.size() == 0 && allokpath.size() == 0) { // not find one solve until now
 //            ++asi;
 //            iterFlag = true;
-//            ASK(src, src, dest, conditions, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
-        ++TouchEndCount;
-        if (TouchEndCount > conditions.size()) {
-//            if (TouchEndCount > 1) {
-            iterFlag = false;
-            TouchEndCount = 0;
-        }
+//            ASK(src, src, dest, conditions, pathDict, fullPath, iterCount, processed, okpath, allokpath, iterFlag, asi);
+            ++TouchEndCount;
+            if (TouchEndCount > conditions.size()) {
+//            if (TouchEndCount > 2) {
+                iterFlag = false;
+                TouchEndCount = 0;
+            }
 //        return;
-    }
+        }
 //    }
 
 
@@ -947,6 +926,7 @@ void ASK(int node,
     if (key.size() == conditions.size()) {
         myokpath.second.first.push_back(node);
         allokpath.insert(myokpath);
+        iterFlag = false;
 //        printf("Cost>[%d]\n",okpath.first);
 //        PrintSetVectorInt(allokpath,conditions);
 //        cout << "\nSIZE->" << allokpath.size()<<endl;
@@ -956,33 +936,31 @@ void ASK(int node,
 //        if(allokpath.size()==1000) {
 
         /*
-        if (get_miltime() >= 1000) {
+        if (get_miltime() >= 9000) {
             if (allokpath.size() > 0) {
+//                ViewSetPath(setPath,conditions);
                 PrintSetPath(allokpath, conditions);
             }
             exit(10);
         }
-        return;
          */
+        return;
     }
 
-    if (get_miltime() >= 1000) {
-        if (allokpath.size() > 0) {
-            PrintSetPath(allokpath, conditions);
-            exit(12);
-        }
-        else{
+    if (get_miltime() >= 9000) {
+//        if (allokpath.size() == 0) {
             processed.clear();
             iterCount = conditions.size();
             Path tmp;
             okpath = tmp;
-            KKK(src,src,dest,conditions,fullPath,iterCount,processed,okpath,allokpath,5);
+            KKK(src,src,dest,conditions,fullPath,iterCount,processed,okpath,allokpath,1);
 //            PrintNA(re);
 //            exit(91);
-        }
+//        }
     }
 
-    for (set<Path>::iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
+
+    for (set<Path>::const_iterator PathIter = setPath.begin(); PathIter != setPath.end(); ++PathIter) {
         myprocessed = processed; //[!]:2r setPath ,go without 1st viad node lsit
         myokpath = okpath;
         const vector<int> &pointInfo = (*PathIter).second.first;
@@ -992,23 +970,18 @@ void ASK(int node,
             if (myprocessed.count(pointInfo[i])) {
 //                cout<<pointInfo[i];
                 flag = false;
-                Path s = *PathIter;
-                ++(s.first.first);
-                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].erase(*PathIter);
-                fullPath[pair<int,int>(node,(*PathIter).second.first.back())].insert(s);
                 break;
             }
         }
 
         if (flag == false) {
-//            fullPath[pair<int,int>(node,dest)].erase(*PathIter);
             continue;
         }
         else {
             for (int i = 0; i < pointInfo.size(); i++) {
                 myprocessed.insert(pointInfo[i]);
             }
-            myokpath.first.second += (*PathIter).first.second;
+            myokpath.first += (*PathIter).first;
             myokpath.second.first.insert(myokpath.second.first.end(), pointInfo.begin(), pointInfo.end());
             myokpath.second.second.insert(myokpath.second.second.end(), edgeInfo.begin(), edgeInfo.end());
 //            if(node==src){
@@ -1026,10 +999,10 @@ void ASK(int node,
             for (int i = 0; i < pointInfo.size(); i++) {
                 processed.erase(pointInfo[i]);
             }
-            processed.erase(beta);//AF END
-//            if(node==src){
-//                iterFlag = true;
-//            }
+            processed.erase(beta);//AFE
+            if(node==src){
+                iterFlag = true;
+            }
         }
 
         if(node==src){
@@ -1044,7 +1017,6 @@ void VECTK(int node,
            int src,
            int dest,
            const Conditions &conditions,
-           AdvancedPathDict &pathDict,
            FullPath &fullPath,
            int iterCount,
            set<int> processed,
@@ -1145,7 +1117,7 @@ void VECTK(int node,
                         continue;
                     if(iterCount<=0)
                         break;
-                    KKK(*beta, src, dest, conditions, fullPath,myiterCount, myprocessed,okpath,allokpath);
+                    KKK(*beta, src, dest, conditions, pathDict, fullPath,myiterCount, myprocessed,okpath,allokpath);
                 }
 */
                 //                    cout << iterCount;
@@ -1285,550 +1257,774 @@ void SK66(
 }
 
 
+int Xhuisu(int S,int T)
+{
+    int i = 0,j = 0, n = 0,p = 0,c = 0;
+    bool cuflag = 1;
+    int ChiledNum = 0;
+    int chiled[8];//出度最大为8
+
+  //  memset(chiled,9999,sizeof(chiled));//chiled初始化
+
+    n = S;
+    ks = 1;
+    PathStack[ks] = n;
+    PathStack[0] = 9999;
 
 
 
-void print(char *topo[5000], int edge_num, char *demand){
-    char *temp[1];
-    int i;
-    int k;
-    int j;
-    char *ptr[5];
-    int v1;
-    int v2;//邻接矩阵行列
-    int cost;//花费
-    int edge;//边
-    int vnum = 0;//顶点数
-    char tempstart[5] = { 0 };
-    char tempend[5] = { 0 };
-    char tempdemand[5] = { 0 };
-    //printf("%d\n", edge_num);
-    //初始化图,本节点到本节点也设置为-1，不可到达
-    for (i = 0; i < MAXN; ++i)//顶点数最多为边的2倍
+    while(ks != 0 && TimeLong < 5)
     {
-        for (k = 0; k < MAXN; ++k)
+
+        c = 0;
+        ChiledNum = 0;
+        memset(chiled,9999,sizeof(chiled));
+        TimeFinish = clock();
+        TimeLong = (double)(TimeFinish - TimeStart)/CLOCKS_PER_SEC;
+
+        for(j = 0;j < Vmax;j++)//统计路径子集
         {
-            G[i][k] = -1;
-            E[i][k] = -1;
+            if(finalal[n][j] == 1)
+            {
+                chiled[c] = j;
+                c++;
+                ChiledNum++;
+            }
+
         }
 
-    }
 
-    for (i = 0; i < MAXN; ++i)//顶点数最多为边的2倍
-    {
-        Adj_G[i][0] = 0;
-    }
 
-    for (i = 0; i<edge_num; ++i)
-    {
-        ptr[0] = strtok(topo[i], ",");
-        for (k = 0; k < 4; ++k)
+        if(ChiledNum == 0)//假如路径没有子集
         {
-            ptr[k + 1] = strtok(NULL, ",");
+            for(j = 0;j < Vmax;j++)
+            {
+                if(Gtable[n][j].weigt != 0)//弹出点再次初始化
+                {
+                    finalal[n][j] = 1;
+                }
+
+            }
+            PathStack[ks] = 0;
+            ks--;
+            n = PathStack[ks];
         }
 
-        edge = atoi(ptr[0]);
-        v1 = atoi(ptr[1]);
-        v2 = atoi(ptr[2]);
-        cost = atoi(ptr[3]);
 
-        if (vnum<v1)
-            vnum = v1;
-        if (vnum<v2)
-            vnum = v2;//统计节点数
-
-        Adj_G[v1][0] = Adj_G[v1][0] + 1;
-        int adj = Adj_G[v1][0];//统计与v1相邻的点的个数
-        Adj_G[v1][adj] = v2;
-
-        if (((G[v1][v2] != -1) && (G[v1][v2]>cost)) || (G[v1][v2] == -1))
+        else
         {
-            G[v1][v2] = cost;//保存图的索引
-            E[v1][v2] = edge;//保存边的索引
+            for(c = 0;c<ChiledNum;c++ )//假如点n存在出度
+            {
+                i = chiled[c];
+                p = XCheckRe(i);//对i点进行重复检验
+                if( p == ERROR)//假如重复
+               {
+                   finalal[n][i] = 0;
+               }
+                else//假如没有重复判断是否为T，i进栈，n等于栈顶
+                {
+                    if(i == T)
+                    {
+                        if(XCheckPass())
+                        {
+                            ks++;
+                            PathStack[ks] = i;
+                            finalal[n][i] = 0;
+                            XGetResult(result);
+                            PathStack[ks] = 0;
+                            ks--;
+                       //     return OK;
+                        }
+                        finalal[n][i] = 0;//判断不能由n直接到
+                        break;
+                }
+
+                    ks++;
+                    finalal[n][i] = 0;
+                    PathStack[ks] = i;
+                    n = i;
+                    break;
+                }
+            }
+
         }
 
-        vflag[i] = 0;//先置所有边为v-v'
+
+
+
     }
 
-    N_CITY_COUNT = vnum + 1;
-    i = 0;
-    k = 0;
-    while (demand[i] != ',') {
-        tempstart[k] = demand[i];
-        ++k;
-        ++i;
-    }
-    tempstart[k] = '\0';
-    ++i;
-    k = 0;
-    while (demand[i] != ',') {
-        tempend[k] = demand[i];
-        ++k;
-        ++i;
-    }
-    tempend[k] = '\0';
-    ++i;
 
-    j = 0;
-    mustvnum = 0;
-    while (demand[i])
-    {
-        k = 0;
-        while (demand[i] != '|'&& demand[i])
-        {
-            tempdemand[k] = demand[i];
-            ++i;
-            ++k;
-        }
-        tempdemand[k] = '\0';
-        mustv[j] = atoi(tempdemand);
-        vflag[mustv[j]] = 1;
-        ++mustvnum;
-        ++i;
-        ++j;
-    }
-    startcity = atoi(tempstart);
-    endcity = atoi(tempend);
-    //printf("节点数%d\n", N_CITY_COUNT);
+
+
+//return ERROR;
+
 }
 
 
 
 
-int if_arrive(int top, int count, int path[])
+int XGetResult(unsigned short *result)
 {
-    int j;
-    int v;
-    int ifarrive = 0;
-    //int lock = 0;
-    stack<int> mystack;
-    if (top != endcity)
-        mystack.push(top);
-    int visited[MAXN];
-    mostv = 0;
-    memset(visited, 0, 4 * MAXN);
-    for (int i = 0; i < count; ++i)
+    int i = 0,j = 0,k = 0,w = 0;
+    unsigned short result2[600] = {0};
+
+    for(k = 1;k <ks;k++)
     {
-        visited[path[i]] = 1;
+        i = PathStack[k];
+        j = PathStack[k+1];
+        result2[k-1] = Gtable[i][j].Edge;
+        w = Gtable[i][j].weigt + w;
     }
-    while (!mystack.empty())
+   // k = k-1;
+    if(w < cost)
     {
-        //lock = 1;
-        v = mystack.top();
-        for (j = 1; j <= Adj_G[v][0]; ++j)
+        for(k = 0;k < ks;k++)
         {
-            int select = Adj_G[v][j];
-            if (visited[select] != 1)
+            result[k] = result2[k];
+        }
+        k = k-1;
+        R = k;
+        cost = w;
+
+    }
+
+    return k;
+}
+
+
+
+
+int XCheckRe(int i)
+{
+    int k = 0;
+    for(k = 0; k <= ks;k++)//加入点储存在栈中，返回error;可优化，不必每次都循环；
+    {
+        if (PathStack[k] == i)
+        {
+            return ERROR;
+        }
+    }
+    return OK;
+}
+
+
+
+
+int XCheckPass()
+{
+    int k = 0,i = 0,passflag = 0;
+
+
+    for(i = 0;i < passnum-1 ;i++)//终点不加入检查
+    {
+        passflag = 0;
+        for(k = 0;k <= ks;k++)
+        {
+            if(demandint[i] == PathStack[k])
             {
-                mystack.push(select);
-                if (vflag[select] == 1)
-                    mostv++;
-                if (select == endcity)//遇到了目的节点应该直接跳出，不能继续向后搜索
-                {
-                    ifarrive = 1;
-                }
-                visited[select] = 1;
+                passflag = 1;
                 break;
             }
         }
-        //只要从一条路径到达了目的节点则为可到达目的节点
-        if (j == Adj_G[v][0] + 1)
+        if(passflag == 0)//假如有一个点没有遍历到
         {
-            mystack.pop();
+            return ERROR;
         }
 
-        /*if (lock == 0 && ifarrive == 0)
-        {
-        //printf("a");
-        mostv = 0;
-        lock = 1;
-        }*/
     }
-    return ifarrive;
+
+
+        return OK;
+
+
 }
 
 
 
 
-void DFS()
+
+
+
+
+
+
+bool FindWay(int S,int T)
 {
-    int find = 0;
-    int visitededge[8 * MAXN];
-    memset(visitededge, 0, 4 * 8 * MAXN);
-    int i;
-    int v;
-    int instack[MAXN];//1表示在堆栈里的节点不可访问，visitededge取消的时候可能把路径里的节点也取消了
-    memset(instack, 0, MAXN);
-    int length = 0;
-    int countmustv = 0;//经过的v'数
-    int count = 0;//经过的节点数
-    int minlength = 10000;//初始给很大的值
-    int arrive;
-    stack<int> mystack;
-    mystack.push(startcity);
-    path[0] = startcity;
-    instack[startcity] = 1;
-    count++;//已经经过的点
-    while (!mystack.empty())
+    int x = 0;
+    int i = 0,j = 0,k = 0;
+    int c = 0;
+
+    bool status = 0;
+
+    while(ks != -1 && TimeLong < 9)
     {
-        v = mystack.top();
-        for (i = 0; i < N_CITY_COUNT; ++i)
+
+        TimeFinish = clock();
+        TimeLong = (double)(TimeFinish - TimeStart)/CLOCKS_PER_SEC;
+        status = FindChild(S);
+        if(status == 0)
         {
-            if (G[v][i] != -1 && !visitededge[E[v][i]] && !instack[i])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
-            {
-                visitededge[E[v][i]] = 1;
-                path[count] = i;
-                count++;
-                if (vflag[i] == 1)
-                    countmustv++;
-                mystack.push(i);
-                //printf("c%d %d ", count, G[path[count - 2]][path[count - 1]]);
-                length += G[path[count - 2]][path[count - 1]];
-                instack[i] = 1;
-                if (length >= minlength)
-                {
+            Pop();
+            S = PathStack[ks];
 
-                    //printf(" *%d* ", length);
-                    length = length - G[path[count - 2]][path[count - 1]];
-                    if (vflag[i] == 1)
-                        countmustv--;
-                    instack[i] = 0;//后面该节点还是有可能访问到的
-                    mystack.pop();
-                    count--;
-                    //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                    //修改栈顶和i
-                    v = mystack.top();
-                    i = -1;
-                }
-                if ((N_CITY_COUNT - count)<(mustvnum - countmustv))
-                {
-                    //printf(" *%d* ", length);
-                    length = length - G[path[count - 2]][path[count - 1]];
-                    if (vflag[path[count - 1]] == 1)//前一次也许已经弹出i点了
-                        countmustv--;
-                    instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
-                    mystack.pop();
-                    count--;
-                    //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                    //修改栈顶和i
-                    v = mystack.top();
-                    i = -1;
-                }
-                if (count > N_CITY_COUNT / 10)
-                {
-                    arrive = if_arrive(path[count - 1], count, path);
-                    if ((path[count - 1] != endcity&&arrive == 0) || ((path[count - 1] != endcity) && ((mostv + countmustv) < mustvnum)))
-                    {
-                        length = length - G[path[count - 2]][path[count - 1]];
-                        if (vflag[path[count - 1]] == 1)
-                            countmustv--;
-                        instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
-                        mystack.pop();
-                        count--;
-                        //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                        //修改栈顶和i
-                        v = mystack.top();
-                        i = -1;
-                    }
-                }
-                break;
-            }
-        }
-        if (i == endcity || i == N_CITY_COUNT)
-        {
-
-            if (countmustv == mustvnum && i == endcity)
-            {
-                //printf("find");
-                if (minlength > length)
-                {
-                    minlength = length;
-                    resultcount = 0;
-                    for (int i = 0; i < count - 1; ++i)
-                    {
-                        result[i] = E[path[i]][path[i + 1]];
-                        resultcount++;
-                    }
-                }
-                //	cout << minlength<<endl;
-                //	if (N_CITY_COUNT > 25)
-                //		find++;
-                //	if (find == 2)
-                //		break;
-            }
-
-            for (int i = 0; i < N_CITY_COUNT; ++i)
-            {
-                if (G[mystack.top()][i] != -1)
-                    visitededge[E[mystack.top()][i]] = 0;
-            }
-            if (vflag[mystack.top()] == 1)
-                countmustv--;
-            instack[mystack.top()] = 0;
-            mystack.pop();
-            G[path[count - 2]][count - 1];
-            if (count >= 2)
-                length = length - G[path[count - 2]][path[count - 1]];
-            count--;
-        }
-    }
-}
-
-
-void DFS1()
-{
-    srand((int)time(0));
-    int visitededge[8 * MAXN];
-    memset(visitededge, 0, 4 * 8 * MAXN);
-    int i;
-    int v;
-    int instack[MAXN];//1表示在堆栈里的节点不可访问，visitededge取消的时候可能把路径里的节点也取消了
-    memset(instack, 0, 4 * MAXN);
-    int length = 0;
-    int countmustv = 0;//经过的v'数
-    int count = 0;//经过的节点数
-    int minlength = 10000;//初始给很大的值
-    int arrive;
-    stack<int> mystack;
-    mystack.push(startcity);
-    path[0] = startcity;
-    instack[startcity] = 1;
-    count++;//已经经过的点的数量
-    int no_allowed_node = 0;//1表示无可选节点
-    int searchcount = 0;
-    int select = -1;
-    while (searchcount<5100)
-    {
-        //if( (clock()-start)>900)
-        //	return;
-        int t = 0;
-        no_allowed_node = 0;//1表示无可选节点
-        v = mystack.top();
-        if (mustvnum > countmustv)
-        {
-            instack[endcity] = 1;
         }
         else
         {
-            instack[endcity] = 0;
-        }
-        for (i = 1; i <= Adj_G[v][0]; ++i)//G[v][0]存放在与v相邻的节点的个数
-        {
-            if (!visitededge[E[v][Adj_G[v][i]]] && !instack[Adj_G[v][i]])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
-                ++t;//可以有t个点可选
-        }
-        if (t == 0)
-            no_allowed_node = 1;
-
-        if (no_allowed_node == 0)
-        {
-            int select_index = rand() % t + 1;//选择第select个，从1开始
-            t = 0;
-            for (i = 1; i <= Adj_G[v][0]; ++i)
+            x = Child[i];
+            Push(S,x);
+            if(x == T)
             {
-                if (!visitededge[E[v][Adj_G[v][i]]] && !instack[Adj_G[v][i]])//加上不在堆栈里是为了防止产生回路 回到路径上的点后会重新搜索一遍，然后进入死循环
+                if(CheckT())
                 {
-                    ++t;//可以有t个点可选
-                    if (vflag[Adj_G[v][i]] == 1)
-                        break;
-                    if (t == select_index)
-                        break;
+                    GetResult(result);
+                    Pop();
+                    S = PathStack[ks];
+                    //return OK;
+                }
+                else
+                {
+                    Pop();
+                    S = PathStack[ks];
                 }
             }
-            select = Adj_G[v][i];
-            visitededge[E[v][select]] = 1;
-            path[count] = Adj_G[v][i];
-            ++count;
-            if (vflag[select] == 1)
-                ++countmustv;
-            mystack.push(select);
-            length += G[path[count - 2]][path[count - 1]];
-            instack[select] = 1;
-            if (length >= minlength)
+
+            //LastS = S;
+            S = PathStack[ks];
+
+        }
+    }
+
+    return ERROR;
+
+}
+
+
+void Pop()//弹出
+{
+    int i = 0,S = 0,k = 0,j = 0;
+    k = PathStack[ks];
+    for(i = 0;i <=50;i++)//将弹出必经点的childflag清零
+    {
+        Vchildflag[k][demandint[i]] = 0;
+    }
+
+    for(k = ks-1;k>=0;k--)
+    {
+        if(V[PathStack[k]] == 1)
+        {
+            S = PathStack[k];
+            break;
+        }
+    }
+
+
+    while(PathStack[ks] != S)
+    {
+        if(V[PathStack[ks]] == 1)//假如该点是必经点
+        {
+            for(i = 0;i<passnum;i++)
             {
-                length = length - G[path[count - 2]][path[count - 1]];
-                if (vflag[select] == 1)
-                    --countmustv;
-                instack[select] = 0;//后面该节点还是有可能访问到的
-                mystack.pop();
-                --count;
-                //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                //修改栈顶和i
-                v = mystack.top();
-                select = -1;
+                if(PathStack[ks] == demandint[i])//将弹出必经点标记为未经过
+                {
+                    demandflag[i] = 0;
+                    break;
+                }
+            }
+        }
+
+        for(i = 0;i < Vmax;i++)//恢复入度
+        {
+            if(Gtable[i][PathStack[ks]].weigt != 0)
+            {
+                finalal[i][PathStack[ks]] = 1;
+            }
+        }
+/*        for(i = 0;i < Vmax;i++)//恢复出度
+        {
+            if(Gtable[PathStack[ks]][i].weigt != 0)
+            {
+                finalal[PathStack[ks]][i] = 1;
+            }
+        }*/
+        PathStack[ks] = -1;
+        ks = ks-1;
+    }
+}
+
+
+
+void Push(int S,int T)
+{
+    int StackPath[500];
+    int x = 0;
+    int y = 0;
+    x = T;
+  //  lastks = ks;
+    while( x != S && x != -1)//目标点与源点不相同
+    {
+        StackPath[y] = x;//将Path数组中的顶点入栈
+
+        x = P[StackPath[y]];
+        y++;
+    }
+    StackPath[y] = x;
+
+    for( ; y>=0 ; y--)//栈内的顶点出栈，并按照顺序搜索边
+    {
+
+        PathStack[ks] = StackPath[y];
+        ClearRu(S,StackPath[y]);
+        ks++;
+    }
+    ks = ks-1;
+}
+
+
+void ClearRu(int S,int y)
+{
+    int  i = 0;
+    if(V[y] == 1)//假如输入点为必经点
+    {
+        for(i = 0; i<passnum;i++)
+        {
+            if(demandint[i] == y)
+            {
+                Vchildflag[S][demandint[i]] = 1;//标记为S点的已遍历孩子
+                demandflag[i] = 1;//标记1表示该点已经经过
+                break;
+            }
+        }
+    }
+
+    for(i = 0;i<Vmax;i++)//入栈点的所有入度归零
+    {
+        finalal[i][y] = 0;
+    }
+}
+
+
+bool FindChild(int S)
+{
+    int i = 0,j = 0;
+    int t = 0;//作为孩子数量的统计
+    int c = 0,n = 0,x = 0;//作为已经经过的cost的统计
+    int F[600] = {0};//定义F矩阵储存启发式函数的值
+    int DFC[600] = {0};
+    int PFC[600] = {0};
+    memset(Child,-1,sizeof(Child));
+    Dijkstra(Vmax,S,P,D);
+    c = WeigtSum();
+    for(i = 1;i <passnum;i++)
+    {
+        if(D[demandint[i]] > 999 && demandflag[i] == 0)//假如这个孩子节点无法到达所有的剩余点，则返回错误;
+        {
+            return ERROR;
+        }
+        else
+        {
+            if( (Vchildflag[S][demandint[i]] == 0) && CheckPass(S,demandint[i],P))//检查S到demaint[i]的路径是否符合条件
+            {
+                if((c + D[demandint[i]]) <= cost )//只有和小于cost的孩子节点才可以用
+                {
+                    Child[j] = demandint[i];
+                    j++;
+                }
+
             }
 
-            if ((N_CITY_COUNT - count) < (mustvnum - countmustv))
+        }
+
+    }
+
+
+
+    for(t = 0;t < j;t++)
+    {
+  //      Dijkstra(Vmax,Child[t],PFC,DFC);
+        F[t] = D[Child[t]];
+    }
+
+    for(i = 0;i<j-1;i++)
+    {
+        for(t = j-2;t >= i;t--)
+        {
+            if(F[t] > F[t+1])
             {
-                length = length - G[path[count - 2]][path[count - 1]];
-                if (vflag[path[count - 1]] == 1)//前一次也许已经弹出i点了
-                    --countmustv;
-                instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
-                mystack.pop();
-                --count;
-                //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                //修改栈顶和i
-                v = mystack.top();
-                select = -1;
+                n = F[t+1];
+                x = Child[t+1];
+                F[t+1] = F[t];
+                Child[t+1] = Child[t];
+                F[t] = n;
+                Child[t] = x;
+            }
+        }
+    }
+    t = 0;
+
+    for(i = 0;i <50;i++)
+    {
+        if(Child[i] >= 0)
+        {
+            t++;
+        }
+    }
+    if(t < 1)
+    {
+        return ERROR;
+    }
+    return OK;
+
+}
+
+
+bool CheckT()
+{
+    int i = 0;
+    for(i = 0;i<passnum;i++)
+    {
+        if(demandflag[i] == 0)
+        {
+            return ERROR;
+        }
+    }
+    return OK;
+}
+
+//从P矩阵中获取顺序点
+bool CheckPass(int S,int T,int *Path)
+{
+    int StackPath[500];
+    int x = 0;
+    int y = 0;
+    int i = 0;
+    if(D[T] > 999)
+    {
+        return ERROR;
+    }
+    x = T;
+  //  lastks = ks;
+    while( x != S && x != -1)//目标点与源点不相同
+    {
+        StackPath[y] = x;//将Path数组中的顶点入栈
+        x = Path[StackPath[y]];
+        if(V[x] == 1 && x != S)//假如路径经过了非起点的必经点
+        {
+            return ERROR;
+        }
+
+
+        y++;
+    }
+    StackPath[y] = x;
+    return OK;
+}
+
+
+int WeigtSum()//可以不用此函数，直接利用D数据进行计算
+{
+    int k = 0,w = 0,i = 0,j = 0;
+    for(k = 0;k < ks;k++)
+    {
+        i = PathStack[k];
+        j = PathStack[k+1];
+        w = w+Gtable[i][j].weigt;
+    }
+    return w;
+}
+
+
+
+
+int GetResult(unsigned short *result)
+{
+    int i = 0,j = 0,k = 0,w = 0;
+    unsigned short result2[600] = {0};
+    for(k = 0;k <ks;k++)
+    {
+        i = PathStack[k];
+        j = PathStack[k+1];
+        result2[k] = Gtable[i][j].Edge;
+        w = w+Gtable[i][j].weigt;
+    }
+  //  k = k-1;
+  if(w < cost)
+    {
+        for(k = 0;k < ks;k++)
+        {
+            result[k] = result2[k];
+        }
+        //k = k-1;
+        R = k;
+        cost = w;
+    }
+
+    return k;
+}
+
+
+
+
+
+
+
+
+
+//输入：顶点数量，起点，终点
+//输出：路径P，权值D
+int Dijkstra(int Vexnum,int Vbegin, int *P,int *D)
+{
+
+    int v,w,k,m;
+    int final[Vexnum];
+    k = 0;
+    if (Vbegin >= Vexnum)//判断终点是否存在
+    {
+        return ERROR;
+    }
+
+    for(v = 0; v < Vexnum; v++)//数据初始化
+    {
+        final[v] = 0;
+        P[v] = -1;
+        if(Gtable[Vbegin][v].weigt != 0 && finalal[Vbegin][v] != 0)
+        {
+              D[v] = Gtable[Vbegin][v].weigt;
+              P[v] = Vbegin;
+        }
+        else
+        {
+            D[v] = 99999;//将起点与各点的权值置为30，表示没有边相连
+        }
+     //   P[v] = Vbegin;
+    }
+
+    D[Vbegin] = 99999;//起点到起点不存在边
+    final [Vbegin] = 1;//起点不参与搜索
+
+    v = Vbegin + 1;
+
+    while (v % Vexnum != Vbegin )//循环队列，依次搜索所有顶点
+    {
+        m = 99999;//最小值初始化为30
+
+        for(w = 0; w<Vexnum ;w++)//求各点与起点最小权
+        {
+            if (!final[w] && D[w]<m)
+            {
+                k = w;
+                m = D[w];
+            }
+
+        }
+
+    final[k] = 1;
+    for(w = 0; w<Vexnum; w++)//检验权
+    {
+        if(!final[w] && (m+Gtable[k][w].weigt < D[w] ) && (Gtable[k][w].weigt != 0) && (finalal[k][w] != 0))
+        {
+            D[w] = m + Gtable[k][w].weigt;
+            P[w] = k;
+        }
+    }
+        v++;
+
+    }
+    return OK;
+}
+
+
+
+
+
+//输入：边集数组，边的数量
+//输出：邻接矩阵（全局变量），顶点数量
+void TopoToTable(int topoint[5000][4],int edgen,int *max) //将int型的边集数组转为邻接矩阵
+{
+    int i = 0,x = 0,y = 0 ;
+    *max = 0;
+    for (i = 0;i<edgen;i++)
+    {
+        x = topoint[i][1];
+        y = topoint[i][2];
+
+        if(Gtable[x][y].weigt>0 && Gtable[x][y].weigt<21)//有效边
+        {
+            if(topoint[i][3] < Gtable[x][y].weigt)//取重复边中最小值
+            {
+                Gtable[x][y].weigt  = topoint[i][3];
+                Gtable[x][y].weigt  = topoint[i][0];
+            }
+        }
+        else//在邻接矩阵中储存边序号和权值
+        {
+            Gtable[x][y].Edge = topoint[i][0];
+            Gtable[x][y].weigt = topoint[i][3];
+            finalal[x][y] = 1;
+        }
+
+        if (*max < x)//求顶点序号最大值
+        {
+            *max = x;
+        }
+        if(*max < y)
+        {
+            *max = y;
+        }
+    }
+
+
+}
+
+
+
+
+void DFS(char *topo[5000], int edge_num, char *demand){
+    int  topoint[5000][4] ;                                     //定义int数组用于储存读入topo数据（可优化修改为直接读入int）
+
+    int i = 0,j = 0,x=0,y=0,n=0;
+    int S = 0,T = 0;
+    char num[4]={0};//定义字符串数组作为中间变量
+
+//    memset(Path,65535,sizeof(Path));
+
+//    int StackPath[MAXVEX] = {0};//定义输出定点栈
+
+    int status = 1;//输出状态
+
+
+
+    TimeStart = clock();//计时开始
+    memset(finalal,0,sizeof(finalal));
+    memset(demandflag,0,sizeof(demandflag));//清零做好准备
+
+    while(i < 5000 && topo[i]!=NULL) //将输入图信息转化为int型数组
+    {
+        while(topo[i][j] != 10 && topo[i][j] !=0)//不为回车不为空
+        {
+
+            if(topo[i][j] != 44 && topo[i][j] !=10 && topo[i][j] !=0)//不为逗号
+            {
+                 num[n] = topo[i][j];
+                 n++;
+            }
+            else//加入结束符号作为字符串
+            {
+                num[n]= '\0';
+
+                topoint[x][y] = atoi(num);//字符串转为数字
+                memset(num,0,sizeof(num));//中间变量清零
+                n=0;
+                y++;
+            }
+            j++;
+
+        }
+        num[n]= '\0';
+
+        topoint[x][y] = atoi(num);
+        memset(num,0,sizeof(num));
+        n=0;
+        y = 0;
+        j = 0;
+        i++;//跳出while循环条件
+        x++;
+    }
+
+    i = 0;
+    n = 0;
+    y = 0;
+    while(i < MAXVEX && demand[i]!=0)//将必经点信息转化为int数组
+    {
+         if(demand[i]!= 44 && demand[i] != 124 && demand[i+1]!=0)//不为逗号不为竖线不为0
+            {
+                 num[n] = demand[i];
+                 n++;
+                 i++;
+            }
+            else if(demand[i+1] == '\0')//结束
+            {
+                num[n] = demand[i];
+                num[n+1] = '\0';
+                demandint[y] = atoi(num);
+                memset(num,0,sizeof(num));
+                i++;
+                y++;
+
             }
             else
             {
-                arrive = if_arrive(path[count - 1], count, path);
-                if ((path[count - 1] != endcity&&arrive == 0) || ((path[count - 1] != endcity) && ((mostv + countmustv) < mustvnum)))
-                {
-
-                    length = length - G[path[count - 2]][path[count - 1]];
-                    if (vflag[path[count - 1]] == 1)
-                        --countmustv;
-                    instack[path[count - 1]] = 0;//后面该节点还是有可能访问到的
-                    mystack.pop();
-                    --count;
-                    //弹出节点但是到改节点的那条边仍是已访问的,除非指向该节点的点被弹出否则到该节点的边永远是被访问过的
-                    //修改栈顶和i
-                    v = mystack.top();
-                    select = -1;
-                }
+                num[n]= '\0';
+                demandint[y] = atoi(num);
+                memset(num,0,sizeof(num));
+                n=0;
+                y++;
+                i++;
             }
-        }
-        ///////////////////////////如果节点已经经过了所有比较点,直接dijkstra算法////////////////////////////
+    }
 
-        if (countmustv == mustvnum)
+
+    passnum = y;//统计经过点数量
+    x = demandint[1];
+    for(i = 2;i < passnum;i++)
+    {
+        demandint[i-1] = demandint[i];
+    }
+    demandint[passnum-1] = x;
+
+
+    for(i = 0; i<passnum;i++)
+    {
+        V[demandint[i]] = 1;
+    }
+
+
+    S = demandint[0];
+    demandflag[0] = 1;
+    n = 1;//目标点从demand[1]开始
+    x = 0;
+    y = 0;
+
+
+    TopoToTable(topoint,edge_num,&Vmax);//边集数组转换为邻接表
+    ks = 0;
+    S = demandint[0];
+    T = demandint[passnum -1];
+    cost = 9999;//cost初始化
+    Vmax = Vmax+1;//统计顶点数量
+
+    if(passnum <=11)
+    {
+        Xhuisu(S,T);
+      //  R = XGetResult(result);
+        if(R == 0)
         {
-            instack[endcity] = 0;
-            int s[MAXN];    // 判断是否已存入该点到S集合中 1表示存入
-            int dist[MAXN];
-            int prev[MAXN];
-            int n = N_CITY_COUNT;
-            int v = path[count - 1];//起点就是路径最后一个结点
-            for (int i = 0; i<n; ++i)
-                dist[i] = maxint;
-            for (int i = 0; i<n; ++i)
-            {
-                if (G[v][i] != -1 && !instack[i])//这样路径上已有的点不会参与后面计算的
-                    dist[i] = G[v][i];
-                s[i] = 0;     // 初始都未用过该点
-                if (dist[i] == maxint)
-                    prev[i] = -1;//无前驱节点
-                else
-                    prev[i] = v;
-            }
-            dist[v] = 0;
-            s[v] = 1;
-            // 依次将未放入S集合的结点中，取dist[]最小值的结点，放入结合S中
-            // 一旦S包含了所有V中顶点，dist就记录了从源点到所有其他顶点之间的最短路径长度
-            for (int i = 1; i<n; ++i)
-            {
-                int tmp = maxint;
-                int u = v;
-                //找出当前未使用的点j的dist[j]最小值
-                for (int j = 0; j<n; ++j)
-                {
-                    if ((!s[j]) && dist[j]<tmp && !instack[j])
-                    {
-                        u = j;              // u保存当前邻接点中距离最小的点的号码
-                        tmp = dist[j];
-                    }
-                }
-                s[u] = 1;    // 表示u点已存入S集合中
-
-                // 更新dist
-                for (int j = 1; j <= Adj_G[u][0]; ++j)
-                    if ((!s[Adj_G[u][j]]) && G[u][Adj_G[u][j]] != -1 && !instack[Adj_G[u][j]])
-                    {
-                        int newdist = dist[u] + G[u][Adj_G[u][j]];
-                        if (newdist < dist[Adj_G[u][j]])
-                        {
-                            dist[Adj_G[u][j]] = newdist;
-                            prev[Adj_G[u][j]] = u;
-                        }
-                    }
-            }
-            if (dist[endcity] != maxint)
-            {
-                int que[MAXN];
-                int tot = 0;
-                que[tot] = endcity;//u为终点
-                ++tot;
-                length += dist[endcity];
-                int tmp = prev[endcity];
-                while (tmp != v)
-                {
-                    que[tot] = tmp;
-                    ++tot;
-                    tmp = prev[tmp];
-                }
-                que[tot] = v;
-
-                for (int i = tot - 1; i >= 0; --i)
-                {
-                    path[count] = que[i];
-                    ++count;
-                }
-                if (length < minlength)
-                {
-                    minlength = length;
-                    resultcount = 0;
-                    for (int i = 0; i < count - 1; ++i)
-                    {
-                        result[i] = E[path[i]][path[i + 1]];
-                        ++resultcount;
-                    }
-                }
-            }
-            //printf("a");
-            memset(instack, 0, 4 * MAXN);
-            memset(visitededge, 0, 4 * 8 * MAXN);
-            int stacksize = mystack.size();
-            for (int i = 0; i < stacksize; ++i)
-                mystack.pop();
-            length = 0;
-            countmustv = 0;//经过的v'数
-            count = 0;//经过的节点数
-            ++searchcount;
-            mystack.push(startcity);
-            path[0] = startcity;
-            ++count;
-            instack[startcity] = 1;
-            //cout << minlength<<endl;
+            status = ERROR;
         }
-
-            ////////////////////////////////////////////////////////////////////////
-
         else
         {
-
-            if (select == endcity || no_allowed_node == 1)
-            {
-                if (countmustv == mustvnum && select == endcity)
-                {
-                    select = -1;
-                    if (minlength > length)
-                    {
-                        minlength = length;
-                        resultcount = 0;
-                        for (int i = 0; i < count - 1; ++i)
-                        {
-                            result[i] = E[path[i]][path[i + 1]];
-                            ++resultcount;
-                        }
-                    }
-                }
-                ++searchcount;
-                memset(instack, 0, 4 * MAXN);
-                memset(visitededge, 0, 4 * 8 * MAXN);
-                int stacksize = mystack.size();
-                for (int i = 0; i < stacksize; ++i)
-                    mystack.pop();
-                length = 0;
-                countmustv = 0;//经过的v'数
-                count = 0;//经过的节点数
-                mystack.push(startcity);
-                path[0] = startcity;
-                instack[startcity] = 1;
-                ++count;//已经经过的点的数量
-            }
+            status = OK;
         }
-
     }
-}
+    else
+    {
+        FindWay(S,T);
+       //R = GetResult(result);
+        if(R == 0)
+        {
+            status = ERROR;
+        }
+        else
+        {
+            status = OK;
+        }
+    }
 
+
+    if (status == OK) {
+        for (int i = 0; i < R; i++) {
+            record_result(result[i]);
+        }
+    }
+
+}

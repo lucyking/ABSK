@@ -3,6 +3,8 @@
 #include "lib/lib_time.h"
 #include <stdio.h>
 char *re;
+elem Gtable[600][600] = {0};
+bool finalal[600][600] = {0};
 int main(int argc, char *argv[])
 {
     print_time("Begin");
