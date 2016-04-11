@@ -5,7 +5,7 @@
 - [alpha/frame](https://github.com/lucyking/alpha/tree/frame)
 
 ##About
-- refer to neooelric's framework[codeCraft3.0_SK66 project](https://github.com/neooelric/codeCraft3.0_SK66),but the core algorithm ASK/KKK is mine.
+- refer to [neooelric](https://github.com/neooelric)'s framework [codeCraft3.0_SK66 project](https://github.com/neooelric/codeCraft3.0_SK66),but the core algorithm ASK/KKK is wrote by muself.
 - sk66 may obtain loop route,KKK do NOT.
 - the code will use the __Modified__ Dijkstra() to find all the __k shortest path__ between node(i)_node(j) (i,j) E Vs.
 - KKK is such like BSK,the same does ASK.
