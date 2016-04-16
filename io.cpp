@@ -22,7 +22,7 @@ typedef struct
     int cnt;
 }RECORD_QUEUE_S;
 
-static char g_result[MAX_LINE_LEN] = "NA";
+char g_result[MAX_LINE_LEN] = "NA";
 
 INLINE void write_file(const bool cover, const char * const buff, const char * const filename);
 
@@ -39,23 +39,42 @@ void record_result(unsigned short edge)
 void print_time(const char *head)
 { 
     struct timeb rawtime; 
-    struct tm * timeinfo; 
+//    struct tm * timeinfo;
     ftime(&rawtime); 
-    timeinfo = localtime(&rawtime.time);
+//    timeinfo = localtime(&rawtime.time);
 
     static int ms = rawtime.millitm;
     static unsigned long s = rawtime.time;
     int out_ms = rawtime.millitm - ms;
     unsigned long out_s = rawtime.time - s;
-    ms = rawtime.millitm;
-    s = rawtime.time;
 
     if (out_ms < 0)
     {
         out_ms += 1000;
         out_s -= 1;
     }
-    printf("%s date/time is: %s \tused time is %lu s %d ms.\n", head, asctime(timeinfo), out_s, out_ms); 
+//    printf("%s date/time is: %s \tused time is %lu s %d ms.\n", head, asctime(timeinfo), out_s, out_ms);
+}
+
+unsigned long get_miltime()
+{
+    struct timeb rawtime;
+    struct tm * timeinfo;
+    ftime(&rawtime);
+
+    static int ms = rawtime.millitm;
+    static unsigned long s = rawtime.time;
+//    int ms = rawtime.millitm;
+//    unsigned long s = rawtime.time;
+    int out_ms = rawtime.millitm - ms;
+    unsigned long out_s = rawtime.time - s;
+
+    if (out_ms < 0)
+    {
+        out_ms += 1000;
+        out_s -= 1;
+    }
+    return out_ms+out_s*1000;
 }
 
 int read_file(char ** const buff, const unsigned int spec, const char * const filename)
@@ -66,7 +85,7 @@ int read_file(char ** const buff, const unsigned int spec, const char * const fi
         PRINT("Fail to open file %s, %s.\n", filename, strerror(errno));
         return 0;
     }
-    PRINT("Open file %s OK.\n", filename);
+//    PRINT("Open file %s OK.\n", filename);
 
     char line[MAX_LINE_LEN + 2];
     unsigned int cnt = 0;
@@ -81,7 +100,7 @@ int read_file(char ** const buff, const unsigned int spec, const char * const fi
         cnt++;
     }
     fclose(fp);
-    PRINT("There are %d lines in file %s.\n", cnt, filename);
+//    PRINT("There are %d lines in file %s.\n", cnt, filename);
 
     return cnt;
 }
@@ -112,7 +131,7 @@ INLINE void write_file(const bool cover, const char * const buff, const char * c
         PRINT("Fail to open file %s, %s.\n", filename, strerror(errno));
         return;
     }
-    PRINT("Open file %s OK.\n", filename);
+//    PRINT("Open file %s OK.\n", filename);
     fputs(buff, fp);
     fputs("\n", fp);
     fclose(fp);
