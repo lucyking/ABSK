@@ -1,5 +1,5 @@
-# KKK
->modify sk66 to KKK, do not via one node twice.
+# ABSK
+>modify sk66 to ABSK, do not via one node twice.
 
 ##Repo
 - [alpha/frame](https://github.com/lucyking/alpha/tree/frame)
